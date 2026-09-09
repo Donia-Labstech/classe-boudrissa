@@ -291,6 +291,18 @@
   }
   .portal-not-found .emoji{font-size:32px; display:block; margin-bottom:8px;}
   
+  /* ═══ PER-LEVEL OPTIONS MATRIX ═══ */
+  .opt-matrix{border-collapse:collapse; width:100%; min-width:420px; font-size:12.5px;}
+  .opt-matrix th{padding:8px 6px; font-size:11px; font-weight:700; color:var(--ink-soft);
+    border-bottom:1.5px solid var(--line); text-align:center; line-height:1.4;}
+  .opt-matrix th span{font-size:9.5px; font-weight:600; display:block; margin-top:2px;}
+  .opt-matrix td{padding:9px 6px; border-bottom:1px solid var(--line); text-align:center;}
+  .opt-matrix td:first-child{text-align:right; font-weight:700; color:var(--heading);
+    font-family:'El Messiri',sans-serif; font-size:13px;}
+  .opt-matrix tr:last-child td{border-bottom:none;}
+  .opt-matrix tr:hover td{background:var(--hover-bg);}
+  .opt-matrix input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--green); margin:0;}
+
   /* ═══ EDITABLE CARD FIELDS ═══ */
   .sc-input{
     width:100%; border:none; border-bottom:1.5px solid #B8862E55; background:transparent;
@@ -438,6 +450,14 @@
 
     <section class="panel" id="panel-schoolmap">
       <div class="topline"><h1>الخريطة المدرسية 2026/2027</h1><div class="sub">عدد الأفواج الحالي والمقترح لكل مستوى، وطريقة التوزيع — <b>التوزيع يُنفَّذ تلقائيًا</b> فور تغيير أي إعداد</div></div>
+
+      <div class="empty-state" id="schoolmapEmpty" style="display:none; padding:48px 24px;">
+        <div class="big-emoji">🗺</div>
+        <b style="font-size:15px; color:var(--heading);">لا توجد بيانات لبناء الخريطة المدرسية</b><br>
+        <span style="font-size:13px;">استورد بيانات مؤسستك أولًا من صفحة <b>"استيراد البيانات"</b>.</span>
+      </div>
+
+      <div id="schoolmapBody">
       <div class="card">
         <h3>السنة الأولى متوسط (وافدون جدد + معيدو الأولى)</h3>
         <div class="hint">لا يوجد "فوج سابق" لهذا المستوى — التوزيع يُبنى بالكامل من جديد حسب حجم القسم المستهدف</div>
@@ -457,46 +477,65 @@
         </div>
 
         <div style="border:1px solid var(--gold); border-radius:9px; padding:14px 16px; margin-top:10px; background:linear-gradient(180deg,var(--backup-bg-top),var(--paper-2));">
-          <div style="font-family:'El Messiri',sans-serif; font-weight:700; font-size:14px; color:var(--heading); margin-bottom:12px;">⚙️ خيارات التوزيع الذكي — تنطبق على جميع المستويات</div>
+          <div style="font-family:'El Messiri',sans-serif; font-weight:700; font-size:14px; color:var(--heading); margin-bottom:6px;">⚙️ خيارات التوزيع الذكي</div>
 
-          <div class="toggle-row" style="padding:5px 0;">
-            <div class="switch"><input type="checkbox" id="optSeedTopN"><div class="track"><div class="knob"></div></div></div>
-            <div>
-              <div class="lbl-main">🏆 توزيع الأوائل: الطالب الأول في كل قسم</div>
-              <div class="lbl-sub">الأوائل (حسب عدد الأقسام) يُوزَّعون أولًا، واحد في كل قسم — يضمن تكافؤ الفرص</div>
+          <div class="hint" style="margin-bottom:10px;">اختر نطاق تطبيق هذه الخيارات: على كل المستويات دفعةً واحدة، أو إعدادات مخصّصة لكل مستوى على حدة.</div>
+
+          <div class="segmented" id="optScopeSeg" style="margin-bottom:14px;">
+            <div class="seg" data-scope="all">📚 على جميع المستويات</div>
+            <div class="seg" data-scope="custom">🎚 مخصّص لكل مستوى</div>
+          </div>
+
+          <!-- ALL-LEVELS MODE -->
+          <div id="optAllPane">
+            <div class="toggle-row" style="padding:5px 0;">
+              <div class="switch"><input type="checkbox" id="optSeedTopN"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">🏆 توزيع الأوائل: الطالب الأول في كل قسم</div>
+              <div class="lbl-sub">الأوائل (حسب عدد الأقسام) يُوزَّعون أولًا، واحد في كل قسم — يضمن تكافؤ الفرص</div></div>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div class="switch"><input type="checkbox" id="optRepeaterRotation"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">🔄 تدوير ذكي للمعيدين</div>
+              <div class="lbl-sub">المعيدون يُوزَّعون بالتساوي بين الأقسام — بدل إبقائهم في نفس القسم</div></div>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div class="switch"><input type="checkbox" id="optAvoidSameSection"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">🚫 المعيد لا يعود لنفس قسمه السابق</div>
+              <div class="lbl-sub">يُجبر التدوير على اختيار قسم مختلف — لتجديد البيئة الاجتماعية للمعيد</div></div>
+            </div>
+            <div class="toggle-row" style="padding:5px 0; border-top:1px dashed var(--line); margin-top:6px;">
+              <div class="switch"><input type="checkbox" id="optGenderBalance"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">⚖️ موازنة صارمة للجنس بعد التوزيع</div>
+              <div class="lbl-sub">تمريرة ثانية تُبادل التلاميذ بين الأقسام لتقليل الفرق ذكور/إناث</div></div>
             </div>
           </div>
 
-          <div class="toggle-row" style="padding:5px 0;">
-            <div class="switch"><input type="checkbox" id="optRepeaterRotation"><div class="track"><div class="knob"></div></div></div>
-            <div>
-              <div class="lbl-main">🔄 تدوير ذكي للمعيدين</div>
-              <div class="lbl-sub">المعيدون يُوزَّعون بالتساوي بين الأقسام حسب خوارزمية التدوير — بدل إبقائهم في نفس القسم</div>
+          <!-- CUSTOM PER-LEVEL MODE -->
+          <div id="optCustomPane" style="display:none;">
+            <div class="hint" style="margin-bottom:8px;">فعّل أو أوقف كل خيار على حدة لكل مستوى:</div>
+            <div style="overflow-x:auto;">
+              <table class="opt-matrix">
+                <thead>
+                  <tr>
+                    <th style="text-align:right;">المستوى</th>
+                    <th title="توزيع الأوائل">🏆<br><span>الأوائل</span></th>
+                    <th title="تدوير المعيدين">🔄<br><span>تدوير</span></th>
+                    <th title="لا عودة لنفس القسم">🚫<br><span>قسم جديد</span></th>
+                    <th title="موازنة الجنس">⚖️<br><span>الجنس</span></th>
+                  </tr>
+                </thead>
+                <tbody id="optMatrixBody"></tbody>
+              </table>
             </div>
           </div>
 
-          <div class="toggle-row" style="padding:5px 0;">
-            <div class="switch"><input type="checkbox" id="optAvoidSameSection"><div class="track"><div class="knob"></div></div></div>
-            <div>
-              <div class="lbl-main">🚫 المعيد لا يعود لنفس قسمه السابق</div>
-              <div class="lbl-sub">يُجبر التدوير على اختيار قسم مختلف — مفيد لتجديد التفاعلات الاجتماعية للمعيدين</div>
-            </div>
-          </div>
-
-          <div class="toggle-row" style="padding:5px 0; border-top:1px dashed var(--line); margin-top:6px;">
-            <div class="switch"><input type="checkbox" id="optGenderBalance"><div class="track"><div class="knob"></div></div></div>
-            <div>
-              <div class="lbl-main">⚖️ موازنة صارمة للجنس بعد التوزيع</div>
-              <div class="lbl-sub">تمريرة ثانية تُبادل التلاميذ بين الأقسام لتقليل الفرق في نسبة الذكور/الإناث</div>
-            </div>
-          </div>
-
-          <div id="distPreview" class="alert info" style="margin-top:10px; font-size:12px; display:none;"></div>
+          <div id="distPreview" class="alert info" style="margin-top:12px; font-size:12px; display:none;"></div>
         </div>
       </div>
       <div class="card" id="mapping-card-2"></div>
       <div class="card" id="mapping-card-3"></div>
       <div class="card" id="mapping-card-4"></div>
+      </div>
     </section>
 
     <section class="panel" id="panel-import">
@@ -692,15 +731,24 @@ let STATE = {
     mapping: {2:{}, 3:{}, 4:{}},
     levelMode: {2:'identity', 3:'identity', 4:'identity'},
     levelTargetSize: {2:32, 3:32, 4:32},
-    // ─── SMART DISTRIBUTION ───
+    // ─── SMART DISTRIBUTION (global defaults) ───
     seedTopN: true,          // وضع الأوائل: أول N وافد في كل قسم
     repeaterRotation: true,  // تدوير المعيدين: توزيع ذكي بدل الإبقاء في نفس القسم
     genderBalance: true,     // موازنة الجنس بشكل صارم
-    avoidSameSection: true   // المعيد لا يعود لنفس قسمه السابق
+    avoidSameSection: true,  // المعيد لا يعود لنفس قسمه السابق
+    // ─── SCOPE: 'all' = تطبيق على كل المستويات | 'custom' = لكل مستوى إعداداته ───
+    optScope: 'all',
+    levelOpts: {
+      1:{seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true},
+      2:{seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true},
+      3:{seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true},
+      4:{seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true}
+    }
   },
   overrides: {}, genderOverrides: {}, deletedUids: {},
   studentExtras: {},   // uid -> {guardian, guardianRel, phone1, phone2, address, siblings, orphan, illness, notes, signature}
   hideBranding: false,  // إخفاء حقوق الملكية عند الطباعة
+  dbCleared: false,     // true بعد مسح قاعدة البيانات — يمنع عودة بيانات العرض التجريبي
   newSectionsCount: {1:null,2:null,3:null,4:null}, // عدد أقسام السنة الجديدة (يدوي)
   results: null,
   activeSubTab: {1:null,2:null,3:null,4:null},
@@ -732,6 +780,20 @@ rebuildPools();
 /* ═══════════════════════════════════════════════════════════════
    SMART DISTRIBUTION ALGORITHMS  — v3
 ═══════════════════════════════════════════════════════════════ */
+
+/* ── Resolve which distribution options apply to a given level ── */
+function optsFor(lvl){
+  const cfg = STATE.config;
+  if (cfg.optScope === 'custom' && cfg.levelOpts && cfg.levelOpts[lvl]){
+    return cfg.levelOpts[lvl];
+  }
+  return {
+    seedTopN:         cfg.seedTopN         !== false,
+    repeaterRotation: cfg.repeaterRotation  !== false,
+    genderBalance:    cfg.genderBalance     !== false,
+    avoidSameSection: cfg.avoidSameSection  !== false
+  };
+}
 
 /* ── Basic greedy: picks section with min total, tie-break by min same-gender ── */
 function greedyAssignInto(students, sectionKeys, counts, result){
@@ -861,6 +923,7 @@ function runDistribution(){
      Phase 2: greedy fill remaining new arrivals + balance gender
      Phase 3: rotate repeaters (avoid same section)
   ═══════════════════════════════════════════════════════════ */
+  const o1      = optsFor(1);
   const pool1   = POOLS[1].slice();
   const n1      = STATE.newSectionsCount[1] || Math.max(1, Math.ceil(pool1.length / cfg.targetSize1));
   const keys1   = Array.from({length:n1}, (_,i)=>i+1);
@@ -872,7 +935,7 @@ function runDistribution(){
     const newStudents = pool1.filter(s=>s.status==='NEW').sort((a,b)=>b.avg-a.avg);
     const repeaters1  = pool1.filter(s=>s.status==='REPEAT');
 
-    if (cfg.seedTopN && newStudents.length >= n1){
+    if (o1.seedTopN && newStudents.length >= n1){
       // Phase 1: seed — top N new arrivals, one per section
       const remainder = seedTopN(newStudents, keys1, c1, r1);
       // Phase 2: greedy fill the rest
@@ -881,8 +944,8 @@ function runDistribution(){
       greedyAssignInto(newStudents, keys1, c1, r1);
     }
     // Phase 3: repeaters
-    if (cfg.repeaterRotation && repeaters1.length > 0){
-      rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, cfg.avoidSameSection);
+    if (o1.repeaterRotation && repeaters1.length > 0){
+      rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, o1.avoidSameSection);
     } else {
       greedyAssignInto(repeaters1.sort((a,b)=>b.avg-a.avg), keys1, c1, r1);
     }
@@ -890,25 +953,26 @@ function runDistribution(){
     // Separate mode
     const newStudents = pool1.filter(s=>s.status==='NEW').sort((a,b)=>b.avg-a.avg);
     const repeaters1  = pool1.filter(s=>s.status==='REPEAT');
-    if (cfg.seedTopN && newStudents.length >= n1){
+    if (o1.seedTopN && newStudents.length >= n1){
       const remainder = seedTopN(newStudents, keys1, c1, r1);
       greedyAssignInto(remainder, keys1, c1, r1);
     } else {
       greedyAssignInto(newStudents, keys1, c1, r1);
     }
-    if (cfg.repeaterRotation && repeaters1.length > 0){
-      rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, cfg.avoidSameSection);
+    if (o1.repeaterRotation && repeaters1.length > 0){
+      rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, o1.avoidSameSection);
     } else {
       greedyAssignInto(repeaters1.sort((a,b)=>b.avg-a.avg), keys1, c1, r1);
     }
   }
 
   // Gender balance refinement pass
-  if (cfg.genderBalance) genderBalancePass(keys1, c1, r1);
+  if (o1.genderBalance) genderBalancePass(keys1, c1, r1);
   results[1] = {sections: r1};
 
   /* ══════════ LEVELS 2-4 ══════════ */
   [2,3,4].forEach(lvl=>{
+    const o = optsFor(lvl);
     const promoted  = POOLS[lvl].filter(s=>s.status==='PROMOTED');
     const repeaters = POOLS[lvl].filter(s=>s.status==='REPEAT');
     let keys, counts, result, repCounts={};
@@ -920,19 +984,19 @@ function runDistribution(){
       ({counts, result} = freshCounts(keys));
       // Seed top promoted students then greedy fill
       const sortedPro = promoted.slice().sort((a,b)=>b.avg-a.avg);
-      if (cfg.seedTopN && sortedPro.length >= n){
+      if (o.seedTopN && sortedPro.length >= n){
         const rem = seedTopN(sortedPro, keys, counts, result);
         greedyAssignInto(rem, keys, counts, result);
       } else {
         greedyAssignInto(sortedPro, keys, counts, result);
       }
       // Rotate repeaters
-      if (cfg.repeaterRotation && repeaters.length > 0){
-        rotateRepeaters(repeaters, keys, counts, result, repCounts, cfg.avoidSameSection);
+      if (o.repeaterRotation && repeaters.length > 0){
+        rotateRepeaters(repeaters, keys, counts, result, repCounts, o.avoidSameSection);
       } else {
         greedyAssignInto(repeaters.sort((a,b)=>b.avg-a.avg), keys, counts, result);
       }
-      if (cfg.genderBalance) genderBalancePass(keys, counts, result);
+      if (o.genderBalance) genderBalancePass(keys, counts, result);
     } else {
       // Identity mode: promoted follow mapping, repeaters rotate
       const mapping = getMapping(lvl);
@@ -953,8 +1017,8 @@ function runDistribution(){
       });
 
       // Rotate repeaters across mapped sections
-      if (cfg.repeaterRotation && repeaters.length > 0){
-        rotateRepeaters(repeaters, keys, counts, result, repCounts, cfg.avoidSameSection);
+      if (o.repeaterRotation && repeaters.length > 0){
+        rotateRepeaters(repeaters, keys, counts, result, repCounts, o.avoidSameSection);
       } else {
         repeaters.forEach(s=>{
           const dest = mapping[s.originSection];
@@ -962,7 +1026,7 @@ function runDistribution(){
         });
       }
       // Light gender balance (only swaps students, not sections)
-      if (cfg.genderBalance) genderBalancePass(keys, counts, result);
+      if (o.genderBalance) genderBalancePass(keys, counts, result);
     }
     results[lvl] = {sections: result};
   });
@@ -1002,6 +1066,7 @@ function persist(){
         institution: STATE.institution, config: STATE.config, overrides: STATE.overrides,
         genderOverrides: STATE.genderOverrides, deletedUids: STATE.deletedUids, extraSections: STATE._extraSections,
         studentExtras: STATE.studentExtras, hideBranding: STATE.hideBranding, newSectionsCount: STATE.newSectionsCount,
+        dbCleared: STATE.dbCleared,
         darkMode: STATE.darkMode
       }), false);
     }catch(e){ console.warn('save failed', e); }
@@ -1026,6 +1091,7 @@ async function restore(){
       if (p.extraSections) STATE._extraSections = p.extraSections;
       if (p.studentExtras) STATE.studentExtras = p.studentExtras;
       if (typeof p.hideBranding === 'boolean') STATE.hideBranding = p.hideBranding;
+      if (typeof p.dbCleared === 'boolean') STATE.dbCleared = p.dbCleared;
       if (p.newSectionsCount) STATE.newSectionsCount = Object.assign({1:null,2:null,3:null,4:null}, p.newSectionsCount);
       if (typeof p.darkMode === 'boolean') STATE.darkMode = p.darkMode;
     }
@@ -1033,7 +1099,11 @@ async function restore(){
   try{
     const r2 = await window.storage.get('imported-dataset', false);
     if (r2 && r2.value) RAW_DATA = JSON.parse(r2.value);
-  }catch(e){}
+    else if (STATE.dbCleared) RAW_DATA = { current: [], new_arrivals: [] };
+  }catch(e){
+    // no imported dataset — if the admin cleared the DB, stay empty
+    if (STATE.dbCleared) RAW_DATA = { current: [], new_arrivals: [] };
+  }
 }
 function applyDarkMode(){
   document.body.classList.toggle('dark', STATE.darkMode);
@@ -1046,6 +1116,20 @@ function renderOverview(){
   const el = document.getElementById('overview-stats');
   const cur     = RAW_DATA.current;
   const newArr  = RAW_DATA.new_arrivals;
+
+  /* ── empty state ── */
+  if (cur.length === 0 && newArr.length === 0){
+    el.innerHTML = `<div class="empty-state" style="padding:48px 24px;">
+      <div class="big-emoji">📭</div>
+      <b style="font-size:15px; color:var(--heading);">لا توجد بيانات تلاميذ حاليًا</b><br>
+      <span style="font-size:13px;">
+        ${STATE.dbCleared ? 'تم مسح قاعدة البيانات — التطبيق جاهز لمؤسسة جديدة.' : 'ابدأ باستيراد بياناتك.'}<br>
+        انتقل إلى صفحة <b>"استيراد البيانات"</b> لرفع ملفات مؤسستك،
+        أو استعد نسخة احتياطية سابقة.
+      </span>
+    </div>`;
+    return;
+  }
 
   /* ── precision helpers ── */
   const q = (arr, fn) => arr.filter(fn).length;
@@ -1306,15 +1390,21 @@ function renderInstitution(){
 }
 
 function renderSchoolMap(){
+  const smEmpty = document.getElementById('schoolmapEmpty');
+  const smBody  = document.getElementById('schoolmapBody');
+  if (RAW_DATA.current.length === 0 && RAW_DATA.new_arrivals.length === 0){
+    if (smEmpty) smEmpty.style.display = 'block';
+    if (smBody)  smBody.style.display  = 'none';
+    renderDistOptions();   // keep saved option state in sync even while hidden
+    return;
+  }
+  if (smEmpty) smEmpty.style.display = 'none';
+  if (smBody)  smBody.style.display  = 'block';
   document.getElementById('sm1-current-sec').textContent = (new Set(RAW_DATA.current.filter(r=>r.lvl===1).map(r=>r.sec))).size + ' قسم';
   document.getElementById('sm1-pool').textContent = POOLS[1].length + ' تلميذ';
   document.getElementById('targetSize1').value = STATE.config.targetSize1;
   document.getElementById('mergeRepeaters1').checked = STATE.config.mergeRepeaters1;
-  const opts = STATE.config;
-  document.getElementById('optSeedTopN').checked         = opts.seedTopN         !== false;
-  document.getElementById('optRepeaterRotation').checked = opts.repeaterRotation  !== false;
-  document.getElementById('optAvoidSameSection').checked = opts.avoidSameSection  !== false;
-  document.getElementById('optGenderBalance').checked    = opts.genderBalance     !== false;
+  renderDistOptions();
   const autoN1 = Math.max(1, Math.ceil(POOLS[1].length/STATE.config.targetSize1));
   const manualN1 = STATE.newSectionsCount[1];
   document.getElementById('newSections1').value = manualN1 || '';
@@ -1788,6 +1878,7 @@ function applyImportedData(){
   if (_importedCurrent.length===0){ alert('لا توجد بيانات أقسام مستوردة بعد.'); return; }
   _importedCurrent.forEach(r=>{ if (r.lvl===4 && !r.dec) r.dec = 'L'; });
   RAW_DATA = { current: _importedCurrent, new_arrivals: _importedNewArrivals };
+  STATE.dbCleared = false;
   STATE.overrides = {}; STATE.genderOverrides = {}; STATE.deletedUids = {}; STATE._extraSections = {1:[],2:[],3:[],4:[]};
   STATE.config.mapping = {2:{},3:{},4:{}};
   persistDataset(); persist(); rerun();
@@ -1800,7 +1891,10 @@ function clearAllData(){
   const config = JSON.parse(JSON.stringify(STATE.config));
   const darkMode = STATE.darkMode;
   RAW_DATA = { current: [], new_arrivals: [] };
+  STATE.dbCleared = true;
   STATE.overrides = {}; STATE.genderOverrides = {}; STATE.deletedUids = {};
+  STATE.studentExtras = {};
+  STATE.newSectionsCount = {1:null,2:null,3:null,4:null};
   STATE._extraSections = {1:[],2:[],3:[],4:[]}; STATE.results = null;
   STATE.activeSubTab = {1:null,2:null,3:null,4:null};
   STATE.filterRepeatOnly = {1:false,2:false,3:false,4:false};
@@ -1826,7 +1920,7 @@ function clearAllData(){
 }
 
 function resetToDemo(){
-  RAW_DATA = DEMO_DATA; _importedCurrent = []; _importedNewArrivals = [];
+  RAW_DATA = DEMO_DATA; STATE.dbCleared = false; _importedCurrent = []; _importedNewArrivals = [];
   STATE.overrides = {}; STATE.genderOverrides = {}; STATE.deletedUids = {}; STATE._extraSections = {1:[],2:[],3:[],4:[]};
   STATE.config.mapping = {2:{},3:{},4:{}};
   persistDataset(); persist(); updateImportSummary();
@@ -1876,6 +1970,7 @@ async function restoreBackup(file){
     if (!confirm(`استرجاع نسخة محفوظة بتاريخ ${savedDate}؟ سيُستبدَل كل ما هو موجود حاليًا في التطبيق بهذه النسخة.`)) return;
 
     RAW_DATA = snapshot.raw_data;
+    STATE.dbCleared = false;
     STATE.institution = Object.assign({}, DEFAULT_INSTITUTION, snapshot.institution||{});
     STATE.config = Object.assign({targetSize1:32, mergeRepeaters1:true, mapping:{2:{},3:{},4:{}}, levelMode:{2:'identity',3:'identity',4:'identity'}, levelTargetSize:{2:32,3:32,4:32}}, snapshot.config||{});
     STATE.overrides = snapshot.overrides || {};
@@ -2960,31 +3055,78 @@ function toggleBrand(hide){
 }
 
 
+function renderDistOptions(){
+  const cfg   = STATE.config;
+  const scope = cfg.optScope || 'all';
+
+  /* segmented control state */
+  document.querySelectorAll('#optScopeSeg .seg').forEach(s=>{
+    s.classList.toggle('active', s.dataset.scope === scope);
+  });
+  const allPane = document.getElementById('optAllPane');
+  const cusPane = document.getElementById('optCustomPane');
+  if (allPane) allPane.style.display = (scope === 'all')    ? 'block' : 'none';
+  if (cusPane) cusPane.style.display = (scope === 'custom') ? 'block' : 'none';
+
+  /* global toggles */
+  const g = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
+             optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance'};
+  Object.keys(g).forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.checked = cfg[g[id]] !== false;
+  });
+
+  /* per-level matrix */
+  const body = document.getElementById('optMatrixBody');
+  if (body){
+    const KEYS = ['seedTopN','repeaterRotation','avoidSameSection','genderBalance'];
+    body.innerHTML = [1,2,3,4].map(lvl=>{
+      const o = (cfg.levelOpts && cfg.levelOpts[lvl]) || {};
+      const cells = KEYS.map(k=>
+        `<td><input type="checkbox" data-lvl="${lvl}" data-opt="${k}" ${o[k]!==false?'checked':''}></td>`
+      ).join('');
+      return `<tr><td>${LEVEL_LABEL[lvl]}</td>${cells}</tr>`;
+    }).join('');
+  }
+
+  updateDistPreview();
+}
+
 function updateDistPreview(){
   const el = document.getElementById('distPreview');
   if (!el) return;
   const cfg = STATE.config;
-  const pool1 = POOLS[1];
-  const newStudents = pool1.filter(s=>s.status==='NEW');
-  const rep1 = pool1.filter(s=>s.status==='REPEAT');
-  const n1 = Math.max(1, Math.ceil(pool1.length / cfg.targetSize1));
+  const scope = cfg.optScope || 'all';
 
-  const parts = [];
-  if (cfg.seedTopN && newStudents.length >= n1)
-    parts.push(`🏆 الأوائل ${n1}: كل فوج يستقبل أعلى طالب بمعدل`);
-  if (cfg.repeaterRotation && rep1.length > 0)
-    parts.push(`🔄 ${rep1.length} معيد يُدوَّر بالتساوي (${Math.round(rep1.length/n1*10)/10} لكل فوج)`);
-  if (cfg.avoidSameSection)
-    parts.push('🚫 المعيد يذهب لقسم غير قسمه السابق');
-  if (cfg.genderBalance)
-    parts.push('⚖️ موازنة الجنس بعد التوزيع');
-
-  if (parts.length > 0){
-    el.style.display = 'block';
-    el.innerHTML = '<b>خلاصة خيارات التوزيع:</b><br>' + parts.join('<br>');
-  } else {
-    el.style.display = 'none';
+  if (RAW_DATA.current.length === 0 && RAW_DATA.new_arrivals.length === 0){
+    el.style.display = 'none'; return;
   }
+
+  const label = {seedTopN:'🏆 الأوائل', repeaterRotation:'🔄 تدوير المعيدين',
+                 avoidSameSection:'🚫 قسم جديد للمعيد', genderBalance:'⚖️ موازنة الجنس'};
+  const KEYS = Object.keys(label);
+
+  let html = '';
+  if (scope === 'all'){
+    const on = KEYS.filter(k => cfg[k] !== false).map(k=>label[k]);
+    const n1 = STATE.newSectionsCount[1] || Math.max(1, Math.ceil(POOLS[1].length / cfg.targetSize1));
+    const rep1 = POOLS[1].filter(s=>s.status==='REPEAT').length;
+    html = `<b>النطاق: جميع المستويات</b><br>` +
+      (on.length ? on.join(' &nbsp;·&nbsp; ') : '<i>كل الخيارات موقوفة — توزيع بسيط بالتساوي</i>');
+    if (cfg.seedTopN !== false && POOLS[1].length)
+      html += `<br><span style="font-size:11px;">السنة الأولى: أعلى ${n1} تلميذ يُوزَّعون واحدًا في كل فوج` +
+              (rep1 ? ` — ${rep1} معيد يُدوَّرون (≈${Math.round(rep1/n1*10)/10}/فوج)` : '') + `</span>`;
+  } else {
+    const rows = [1,2,3,4].map(lvl=>{
+      const o = optsFor(lvl);
+      const on = KEYS.filter(k => o[k] !== false).map(k=>label[k]);
+      return `<div style="padding:2px 0;"><b>${LEVEL_LABEL[lvl]}:</b> ` +
+        (on.length ? on.join(' · ') : '<i style="opacity:.7">بدون خيارات</i>') + '</div>';
+    }).join('');
+    html = `<b>النطاق: مخصّص لكل مستوى</b>${rows}`;
+  }
+  el.style.display = 'block';
+  el.innerHTML = html;
 }
 
 document.querySelectorAll('.nav-btn').forEach(btn=>{
@@ -3009,13 +3151,34 @@ document.getElementById('newSections1').addEventListener('input', e=>{
   persist(); rerun();
 });
 document.getElementById('mergeRepeaters1').addEventListener('change', e=>{ STATE.config.mergeRepeaters1 = e.target.checked; persist(); rerun(); });
+/* ── scope segmented control ── */
+document.querySelectorAll('#optScopeSeg .seg').forEach(seg=>{
+  seg.addEventListener('click', ()=>{
+    STATE.config.optScope = seg.dataset.scope;
+    persist(); rerun();
+  });
+});
+
+/* ── global (all-levels) toggles ── */
 ['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', e=>{
-    const map = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation', optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance'};
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', e=>{
+    const map = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
+                 optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance'};
     STATE.config[map[id]] = e.target.checked;
     persist(); rerun();
-    updateDistPreview();
   });
+});
+
+/* ── per-level matrix (event delegation) ── */
+document.getElementById('optMatrixBody').addEventListener('change', e=>{
+  const cb = e.target.closest('input[data-lvl][data-opt]');
+  if (!cb) return;
+  const lvl = cb.dataset.lvl, key = cb.dataset.opt;
+  if (!STATE.config.levelOpts[lvl]) STATE.config.levelOpts[lvl] = {};
+  STATE.config.levelOpts[lvl][key] = cb.checked;
+  persist(); rerun();
 });
 document.getElementById('fileCurrent').addEventListener('change', e=>{ if (e.target.files.length) handleCurrentFiles(Array.from(e.target.files)); });
 document.getElementById('fileNewArr').addEventListener('change', e=>{ if (e.target.files.length) handleNewArrivalsFile(e.target.files[0]); });
