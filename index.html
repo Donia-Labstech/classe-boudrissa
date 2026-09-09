@@ -10,7 +10,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DONIA SMART CLASSE">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+/* احتياط: إن تعذّر تحميل مكتبة التنسيق، حمّل النسخة العادية (تصدير بلا حدود) */
+if (typeof XLSX === 'undefined') {
+  document.write('<script src="https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/xlsx\/0.18.5\/xlsx.full.min.js"><\/script>');
+}
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=Tajawal:wght@400;500;700;800&display=swap');
 
@@ -1668,175 +1674,323 @@ function renderSpecial(){
 ═══════════════════════════════════════════════════════════════ */
 
 /* اسم القسم بالصيغة الرسمية: "1 متوسط3" */
+/* ═══════════════════════════════════════════════════════════════
+   EXCEL EXPORT — official Algerian layout, fully styled
+═══════════════════════════════════════════════════════════════ */
+
+const XS = {                      // لوحة الألوان
+  green:'1F3A24', gold:'B8862E', goldSoft:'F3E9D2',
+  head:'2F5233', grey:'EFEFEF', white:'FFFFFF', line:'7A7A7A'
+};
+const styleSupported = () => { try { return !!(XLSX && XLSX.version); } catch(e){ return false; } };
+
+/* حدود كاملة */
+function bd(w){ w = w||'thin';
+  return {top:{style:w,color:{rgb:XS.line}}, bottom:{style:w,color:{rgb:XS.line}},
+          left:{style:w,color:{rgb:XS.line}}, right:{style:w,color:{rgb:XS.line}}};
+}
+const C = {horizontal:'center', vertical:'center', wrapText:true};
+const R = {horizontal:'right',  vertical:'center', wrapText:true};
+
+/* تطبيق نمط على خلية (يُنشئها إن لم توجد) */
+function setStyle(ws, r, col, style){
+  const ref = XLSX.utils.encode_cell({r, c:col});
+  if (!ws[ref]) ws[ref] = {t:'s', v:''};
+  ws[ref].s = Object.assign({}, ws[ref].s||{}, style);
+}
+function styleRow(ws, r, from, to, style){
+  for (let col=from; col<=to; col++) setStyle(ws, r, col, style);
+}
+
 function officialClassName(lvl, sec){ return lvl + ' متوسط' + sec; }
 
-/* ترويسة رسمية على ثلاثة أعمدة (يمين / وسط / يسار) */
+/* ترويسة رسمية */
 function officialHeader(cols, title){
   const I = STATE.institution;
   const pad = n => new Array(Math.max(0,n)).fill('');
-  const right = 'مديرية التربية لولاية ' + (I.directorate||'');
-  const mid   = I.republic || 'الجمهورية الجزائرية الديمقراطية الشعبية';
   const rows = [];
-  // السطر 1: المديرية (يمين) — الجمهورية (وسط) — الموسم (يسار)
-  rows.push([right, ...pad(cols-3), mid, 'الموسم الدراسي : ' + (I.year||'')]);
-  // السطر 2: المؤسسة (يمين) — الوزارة (وسط)
+  rows.push(['مديرية التربية لولاية ' + (I.directorate||''), ...pad(cols-3),
+             I.republic || 'الجمهورية الجزائرية الديمقراطية الشعبية',
+             'الموسم الدراسي : ' + (I.year||'')]);
   rows.push([(I.school||''), ...pad(cols-3), (I.ministry||'وزارة التربية الوطنية'), '']);
   rows.push(pad(cols));
-  // العنوان
   rows.push([title, ...pad(cols-1)]);
   rows.push(pad(cols));
   return rows;
 }
 
-/* إحصاء مجموعة تلاميذ: جدد/معيدون × ذكور/إناث */
+/* تنسيق الترويسة (أول 5 أسطر) */
+function styleHeaderRows(ws, cols, merges){
+  // سطر 1-2: معلومات المؤسسة
+  for (let r=0; r<2; r++){
+    styleRow(ws, r, 0, cols-1, {font:{sz:11, bold:true, color:{rgb:XS.green}}, alignment:R});
+    setStyle(ws, r, Math.floor(cols/2), {font:{sz:11,bold:true,color:{rgb:XS.green}}, alignment:C});
+    setStyle(ws, r, cols-1, {font:{sz:11,bold:true,color:{rgb:XS.green}}, alignment:{horizontal:'left',vertical:'center'}});
+  }
+  // سطر 4: العنوان
+  styleRow(ws, 3, 0, cols-1, {
+    font:{sz:15, bold:true, color:{rgb:XS.green}},
+    alignment:C,
+    fill:{fgColor:{rgb:XS.goldSoft}},
+    border:{top:{style:'medium',color:{rgb:XS.gold}}, bottom:{style:'medium',color:{rgb:XS.gold}},
+            left:{style:'medium',color:{rgb:XS.gold}}, right:{style:'medium',color:{rgb:XS.gold}}}
+  });
+  merges.push({s:{r:3,c:0}, e:{r:3,c:cols-1}});
+}
+
 function tally(list){
   const isRep = s => s.status === 'REPEAT';
   const isM   = s => s.g === 'M';
-  const newM  = list.filter(s=>!isRep(s) &&  isM(s)).length;
-  const newF  = list.filter(s=>!isRep(s) && !isM(s)).length;
-  const repM  = list.filter(s=> isRep(s) &&  isM(s)).length;
-  const repF  = list.filter(s=> isRep(s) && !isM(s)).length;
-  return {
-    newM, newF, newT:newM+newF,
-    repM, repF, repT:repM+repF,
-    totM:newM+repM, totF:newF+repF, total:list.length
-  };
+  const newM = list.filter(s=>!isRep(s)&& isM(s)).length;
+  const newF = list.filter(s=>!isRep(s)&&!isM(s)).length;
+  const repM = list.filter(s=> isRep(s)&& isM(s)).length;
+  const repF = list.filter(s=> isRep(s)&&!isM(s)).length;
+  return {newM,newF,newT:newM+newF, repM,repF,repT:repM+repF,
+          totM:newM+repM, totF:newF+repF, total:list.length};
 }
 
-/* ── ورقة قسم واحد بالتنسيق الرسمي ── */
+/* ── ورقة قسم واحد ── */
 function buildOfficialClassSheet(lvl, sec, students){
-  const COLS  = 8;
-  const title = 'قوائم تلاميذ قسم:  ' + officialClassName(lvl, sec);
-  const rows  = officialHeader(COLS, title);
-
+  const COLS = 8;
+  const rows = officialHeader(COLS, 'قوائم تلاميذ قسم:  ' + officialClassName(lvl, sec));
+  const HEAD_R = rows.length;                       // سطر رؤوس الأعمدة
   rows.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','معيد','الجنس','الصفة','ملاحظات']);
 
   const sorted = students.slice().sort((a,b)=> a.name.localeCompare(b.name,'ar'));
   sorted.forEach((s,i)=>{
-    const ex  = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
-    const idn = s.id ? String(s.id).slice(-4) : '';
-    rows.push([
-      i+1,
-      idn,
-      s.name,
-      s.dob,
-      s.status==='REPEAT' ? 'نعم' : 'لا',
-      s.g==='M' ? 'ذكر' : 'أنثى',
-      ex.status || '',        // الصفة: داخلي / نصف داخلي / خارجي (تُملأ يدويًا)
-      ex.notes  || ''
-    ]);
+    const ex = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
+    rows.push([ i+1, s.id?String(s.id).slice(-4):'', s.name, s.dob,
+                s.status==='REPEAT'?'نعم':'لا', s.g==='M'?'ذكر':'أنثى',
+                ex.status||'', ex.notes||'' ]);
   });
+  const DATA_START = HEAD_R + 1;
+  const DATA_END   = HEAD_R + sorted.length;
 
-  // ── جدول التعداد أسفل القائمة ──
   const t = tally(students);
   rows.push([]);
-  rows.push(['', '', '', 'المجموع', 'خارجي', 'ن داخلي', 'داخلي', 'معيدون', 'جدد', '']);
-  rows.push(['', '', 'الذكور',  t.totM, '', '', '', t.repM, t.newM, '']);
-  rows.push(['', '', 'الإناث',  t.totF, '', '', '', t.repF, t.newF, '']);
-  rows.push(['', '', 'المجموع', t.total,'', '', '', t.repT, t.newT, '']);
+  const TAL_R = rows.length;
+  rows.push(['','','','المجموع','خارجي','ن داخلي','داخلي','معيدون','جدد']);
+  rows.push(['','','الذكور',  t.totM,'','','', t.repM, t.newM]);
+  rows.push(['','','الإناث',  t.totF,'','','', t.repF, t.newF]);
+  rows.push(['','','المجموع', t.total,'','','', t.repT, t.newT]);
   rows.push([]);
-  const today = new Date().toISOString().slice(0,10);
-  rows.push([(STATE.institution.directorate||'') + ' في: ' + today]);
+  const DATE_R = rows.length;
+  rows.push([(STATE.institution.directorate||'') + ' في: ' + new Date().toISOString().slice(0,10)]);
   rows.push([]);
-  rows.push(['إمضاء مستشار التربية', '', '', 'إمضاء الناظر', '', '', 'إمضاء المديرية', '']);
+  const SIG_R = rows.length;
+  rows.push(['إمضاء مستشار التربية','','','إمضاء الناظر','','','إمضاء المديرية','']);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:8},{wch:13},{wch:16}];
+  ws['!cols'] = [{wch:6},{wch:12},{wch:32},{wch:14},{wch:8},{wch:9},{wch:13},{wch:18}];
+  ws['!rows'] = []; ws['!rows'][3] = {hpt:26}; ws['!rows'][HEAD_R] = {hpt:24};
+
+  if (styleSupported()){
+    const merges = [];
+    styleHeaderRows(ws, COLS, merges);
+
+    // رؤوس الأعمدة
+    styleRow(ws, HEAD_R, 0, COLS-1, {
+      font:{bold:true, sz:11.5, color:{rgb:XS.white}},
+      fill:{fgColor:{rgb:XS.head}}, alignment:C, border:bd('medium')
+    });
+
+    // صفوف التلاميذ — حدود + تظليل متناوب
+    for (let r=DATA_START; r<=DATA_END; r++){
+      const zebra = ((r-DATA_START)%2===1);
+      for (let col=0; col<COLS; col++){
+        const isName = (col===2);
+        setStyle(ws, r, col, {
+          font:{sz:11, bold:isName},
+          alignment: isName ? R : C,
+          border: bd('thin'),
+          fill:{fgColor:{rgb: zebra ? 'F7F5EE' : XS.white}}
+        });
+      }
+      // إبراز المعيد
+      const repRef = XLSX.utils.encode_cell({r, c:4});
+      if (ws[repRef] && ws[repRef].v === 'نعم'){
+        setStyle(ws, r, 4, {font:{sz:11,bold:true,color:{rgb:'9C3D32'}}, alignment:C,
+                            border:bd('thin'), fill:{fgColor:{rgb:'F7E4E1'}}});
+      }
+    }
+
+    // جدول التعداد
+    styleRow(ws, TAL_R, 2, 8, {font:{bold:true,sz:11,color:{rgb:XS.white}},
+      fill:{fgColor:{rgb:XS.head}}, alignment:C, border:bd('thin')});
+    for (let r=TAL_R+1; r<=TAL_R+3; r++){
+      const last = (r===TAL_R+3);
+      styleRow(ws, r, 2, 8, {
+        font:{bold:last, sz:11}, alignment:C, border:bd('thin'),
+        fill:{fgColor:{rgb: last ? XS.goldSoft : XS.grey}}
+      });
+    }
+
+    // التاريخ + الإمضاءات
+    setStyle(ws, DATE_R, 0, {font:{sz:11,italic:true,color:{rgb:XS.green}}, alignment:R});
+    [0,3,6].forEach(col=> setStyle(ws, SIG_R, col,
+      {font:{bold:true,sz:11,color:{rgb:XS.green}}, alignment:C}));
+    merges.push({s:{r:SIG_R,c:0},e:{r:SIG_R,c:1}});
+    merges.push({s:{r:SIG_R,c:3},e:{r:SIG_R,c:4}});
+    merges.push({s:{r:SIG_R,c:6},e:{r:SIG_R,c:7}});
+    ws['!merges'] = merges;
+    ws['!freeze'] = {xSplit:0, ySplit:HEAD_R+1};
+  }
   return ws;
 }
 
-/* ── ورقة "تعداد التلاميذ" لكل المستويات ── */
+/* ── ورقة تعداد التلاميذ ── */
 function buildCensusSheet(){
   const I = STATE.institution;
   const COLS = 10;
   const rows = officialHeader(COLS, 'تعداد التلاميذ لموسم:  ' + (I.year||''));
-
-  rows.push(['القسم','ذكور','إناث','مجموع','ذكور','إناث','مجموع','ذكور','إناث','المجموع الكلي']);
-  rows.push(['',      'التلاميذ المعيدون','','','التلاميذ الجدد','','','المجموع','','']);
+  const GRP_R = rows.length;                       // سطر المجموعات
+  rows.push(['القسم','التلاميذ المعيدون','','','التلاميذ الجدد','','','المجموع','','المجموع الكلي']);
+  const HEAD_R = rows.length;
+  rows.push(['','ذكور','إناث','مجموع','ذكور','إناث','مجموع','ذكور','إناث','']);
 
   const G = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
+  const lvlRows = [], subRows = [];
 
   [1,2,3,4].forEach(lvl=>{
     const secObj = STATE.results[lvl] && STATE.results[lvl].sections;
     if (!secObj) return;
     const keys = Object.keys(secObj).sort((a,b)=>Number(a)-Number(b));
     if (!keys.length) return;
-
     const L = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
     keys.forEach(k=>{
       const t = tally(secObj[k]);
-      rows.push([
-        officialClassName(lvl,k),
-        t.repM, t.repF, t.repT,
-        t.newM, t.newF, t.newT,
-        t.totM, t.totF, t.total
-      ]);
-      Object.keys(L).forEach(p => L[p] += t[p]);
+      lvlRows.push(rows.length);
+      rows.push([officialClassName(lvl,k), t.repM,t.repF,t.repT, t.newM,t.newF,t.newT, t.totM,t.totF,t.total]);
+      Object.keys(L).forEach(p=>L[p]+=t[p]);
     });
-    // مجموع المستوى
-    rows.push([lvl + ' متوسط', L.repM, L.repF, L.repT, L.newM, L.newF, L.newT, L.totM, L.totF, L.total]);
-    Object.keys(G).forEach(p => G[p] += L[p]);
+    subRows.push(rows.length);
+    rows.push([lvl+' متوسط', L.repM,L.repF,L.repT, L.newM,L.newF,L.newT, L.totM,L.totF,L.total]);
+    Object.keys(G).forEach(p=>G[p]+=L[p]);
   });
 
-  rows.push(['المجمـــوع', G.repM, G.repF, G.repT, G.newM, G.newF, G.newT, G.totM, G.totF, G.total]);
+  const TOT_R = rows.length;
+  rows.push(['المجمـــوع', G.repM,G.repF,G.repT, G.newM,G.newF,G.newT, G.totM,G.totF, G.total]);
   rows.push([]);
+  const DATE_R = rows.length;
   rows.push([(I.directorate||'') + ' في: ' + new Date().toISOString().slice(0,10)]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:16},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:13}];
+  ws['!cols'] = [{wch:16},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:14}];
+  ws['!rows'] = []; ws['!rows'][3]={hpt:26}; ws['!rows'][GRP_R]={hpt:22}; ws['!rows'][HEAD_R]={hpt:20};
+
+  if (styleSupported()){
+    const merges = [];
+    styleHeaderRows(ws, COLS, merges);
+
+    // سطر المجموعات المدمج
+    styleRow(ws, GRP_R, 0, COLS-1, {font:{bold:true,sz:12,color:{rgb:XS.white}},
+      fill:{fgColor:{rgb:XS.head}}, alignment:C, border:bd('medium')});
+    merges.push({s:{r:GRP_R,c:1},e:{r:GRP_R,c:3}});   // المعيدون
+    merges.push({s:{r:GRP_R,c:4},e:{r:GRP_R,c:6}});   // الجدد
+    merges.push({s:{r:GRP_R,c:7},e:{r:GRP_R,c:8}});   // المجموع
+    merges.push({s:{r:GRP_R,c:0},e:{r:HEAD_R,c:0}});  // القسم
+    merges.push({s:{r:GRP_R,c:9},e:{r:HEAD_R,c:9}});  // المجموع الكلي
+
+    styleRow(ws, HEAD_R, 0, COLS-1, {font:{bold:true,sz:11,color:{rgb:XS.white}},
+      fill:{fgColor:{rgb:XS.green}}, alignment:C, border:bd('thin')});
+
+    lvlRows.forEach((r,i)=>{
+      const zebra = (i%2===1);
+      for (let col=0; col<COLS; col++){
+        setStyle(ws, r, col, {
+          font:{sz:11, bold:(col===0||col===9)},
+          alignment: col===0 ? R : C, border:bd('thin'),
+          fill:{fgColor:{rgb: zebra ? 'F7F5EE' : XS.white}}
+        });
+      }
+    });
+
+    subRows.forEach(r=> styleRow(ws, r, 0, COLS-1, {
+      font:{bold:true,sz:11.5,color:{rgb:XS.green}},
+      fill:{fgColor:{rgb:'DCE6E0'}}, alignment:C, border:bd('medium')}));
+    setStyle(ws, TOT_R, 0, {font:{bold:true,sz:12,color:{rgb:XS.green}}, alignment:R,
+                            fill:{fgColor:{rgb:XS.goldSoft}}, border:bd('medium')});
+    styleRow(ws, TOT_R, 0, COLS-1, {font:{bold:true,sz:12,color:{rgb:XS.green}},
+      fill:{fgColor:{rgb:XS.goldSoft}}, alignment:C, border:bd('medium')});
+    setStyle(ws, DATE_R, 0, {font:{sz:11,italic:true,color:{rgb:XS.green}}, alignment:R});
+
+    ws['!merges'] = merges;
+    ws['!freeze'] = {xSplit:1, ySplit:HEAD_R+1};
+  }
   return ws;
 }
 
-/* ── تصدير مستوى كامل ── */
+/* ── قائمة بسيطة منسّقة (المعيدون / الموجَّهون) ── */
+function buildSimpleListSheet(title, headers, dataRows, widths){
+  const COLS = headers.length;
+  const rows = officialHeader(COLS, title);
+  const HEAD_R = rows.length;
+  rows.push(headers);
+  dataRows.forEach(r=>rows.push(r));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = widths.map(w=>({wch:w}));
+  ws['!rows'] = []; ws['!rows'][3]={hpt:26}; ws['!rows'][HEAD_R]={hpt:22};
+  if (styleSupported()){
+    const merges = [];
+    styleHeaderRows(ws, COLS, merges);
+    styleRow(ws, HEAD_R, 0, COLS-1, {font:{bold:true,sz:11.5,color:{rgb:XS.white}},
+      fill:{fgColor:{rgb:XS.head}}, alignment:C, border:bd('medium')});
+    dataRows.forEach((_,i)=>{
+      const r = HEAD_R+1+i, zebra = (i%2===1);
+      for (let col=0; col<COLS; col++){
+        setStyle(ws, r, col, {font:{sz:11, bold:(col===2)},
+          alignment: col===2 ? R : C, border:bd('thin'),
+          fill:{fgColor:{rgb: zebra ? 'F7F5EE' : XS.white}}});
+      }
+    });
+    ws['!merges'] = merges;
+    ws['!freeze'] = {xSplit:0, ySplit:HEAD_R+1};
+  }
+  return ws;
+}
+
+/* ── تصدير مستوى ── */
 function exportLevel(lvl){
   if (!STATE.results) return;
   const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
   const secObj = STATE.results[lvl].sections;
   const keys = Object.keys(secObj).sort((a,b)=>Number(a)-Number(b));
 
-  // ورقة لكل قسم
-  keys.forEach(k=>{
-    XLSX.utils.book_append_sheet(wb, buildOfficialClassSheet(lvl, k, secObj[k]), officialClassName(lvl,k));
-  });
+  keys.forEach(k=> XLSX.utils.book_append_sheet(wb,
+    buildOfficialClassSheet(lvl,k,secObj[k]), officialClassName(lvl,k)));
 
-  // ورقة المعيدين
   const reps = [];
-  keys.forEach(k=> secObj[k].forEach(s=>{ if (s.status==='REPEAT') reps.push({...s, newSection:k}); }));
-  const rHead = officialHeader(6, 'قائمة التلاميذ المعيدين — ' + LEVEL_LABEL[lvl]);
-  rHead.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الجديد']);
-  reps.sort((a,b)=>Number(a.newSection)-Number(b.newSection))
-      .forEach((s,i)=> rHead.push([i+1, s.id?String(s.id).slice(-4):'', s.name, s.dob,
-                                   s.g==='M'?'ذكر':'أنثى', officialClassName(lvl,s.newSection)]));
-  const wsR = XLSX.utils.aoa_to_sheet(rHead);
-  wsR['!cols']=[{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, wsR, 'المعيدون');
+  keys.forEach(k=> secObj[k].forEach(s=>{ if (s.status==='REPEAT') reps.push({...s,newSection:k}); }));
+  reps.sort((a,b)=>Number(a.newSection)-Number(b.newSection));
+  XLSX.utils.book_append_sheet(wb, buildSimpleListSheet(
+    'قائمة التلاميذ المعيدين — ' + LEVEL_LABEL[lvl],
+    ['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الجديد'],
+    reps.map((s,i)=>[i+1, s.id?String(s.id).slice(-4):'', s.name, s.dob,
+                     s.g==='M'?'ذكر':'أنثى', officialClassName(lvl,s.newSection)]),
+    [6,12,32,14,9,15]), 'المعيدون');
 
-  // ورقة الموجَّهين (الرابعة فقط)
   if (lvl===4){
     const dir = RAW_DATA.current.filter(r=>r.dec==='V');
-    const dHead = officialHeader(6, 'قائمة التلاميذ الموجَّهين إلى مراكز التكوين المهني');
-    dHead.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الأصلي']);
-    dir.forEach((s,i)=> dHead.push([i+1, String(s.id).slice(-4), s.ln+' '+s.fn, s.dob,
-                                    s.g==='M'?'ذكر':'أنثى', officialClassName(4,s.sec)]));
-    const wsD = XLSX.utils.aoa_to_sheet(dHead);
-    wsD['!cols']=[{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:14}];
-    XLSX.utils.book_append_sheet(wb, wsD, 'الموجهون');
+    XLSX.utils.book_append_sheet(wb, buildSimpleListSheet(
+      'قائمة التلاميذ الموجَّهين إلى مراكز التكوين المهني',
+      ['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الأصلي'],
+      dir.map((s,i)=>[i+1, String(s.id).slice(-4), s.ln+' '+s.fn, s.dob,
+                      s.g==='M'?'ذكر':'أنثى', officialClassName(4,s.sec)]),
+      [6,12,32,14,9,15]), 'الموجهون');
   }
 
-  const tag = (STATE.institution.school || 'قوائم').replace(/[\\\/:*?"<>|]/g,'');
+  const tag = (STATE.institution.school||'قوائم').replace(/[\\\/:*?"<>|]/g,'');
   XLSX.writeFile(wb, `${tag}_${LEVEL_LABEL[lvl]}_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
 }
 
-/* ── تصدير ورقة التعداد وحدها ── */
 function exportCensus(){
   if (!STATE.results) return;
   const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
   XLSX.utils.book_append_sheet(wb, buildCensusSheet(), 'تعداد التلاميذ');
-  const tag = (STATE.institution.school || 'تعداد').replace(/[\\\/:*?"<>|]/g,'');
+  const tag = (STATE.institution.school||'تعداد').replace(/[\\\/:*?"<>|]/g,'');
   XLSX.writeFile(wb, `${tag}_تعداد-التلاميذ_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
 }
 
-/* ── تصدير كل شيء في ملف واحد ── */
 function exportAll(){
   if (!STATE.results) return;
   const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
@@ -1844,11 +1998,10 @@ function exportAll(){
   [1,2,3,4].forEach(lvl=>{
     const secObj = STATE.results[lvl] && STATE.results[lvl].sections;
     if (!secObj) return;
-    Object.keys(secObj).sort((a,b)=>Number(a)-Number(b)).forEach(k=>{
-      XLSX.utils.book_append_sheet(wb, buildOfficialClassSheet(lvl,k,secObj[k]), officialClassName(lvl,k));
-    });
+    Object.keys(secObj).sort((a,b)=>Number(a)-Number(b)).forEach(k=>
+      XLSX.utils.book_append_sheet(wb, buildOfficialClassSheet(lvl,k,secObj[k]), officialClassName(lvl,k)));
   });
-  const tag = (STATE.institution.school || 'قوائم').replace(/[\\\/:*?"<>|]/g,'');
+  const tag = (STATE.institution.school||'قوائم').replace(/[\\\/:*?"<>|]/g,'');
   XLSX.writeFile(wb, `${tag}_كل-القوائم_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
 }
 function renderExport(){
