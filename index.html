@@ -290,6 +290,51 @@
     background:var(--paper); border:1px dashed var(--line); border-radius:10px;
   }
   .portal-not-found .emoji{font-size:32px; display:block; margin-bottom:8px;}
+  
+  /* ═══ EDITABLE CARD FIELDS ═══ */
+  .sc-input{
+    width:100%; border:none; border-bottom:1.5px solid #B8862E55; background:transparent;
+    font-family:'Tajawal',sans-serif; font-size:14px; font-weight:600; color:var(--green-deep);
+    padding:3px 2px; outline:none;
+  }
+  .sc-input:focus{border-bottom-color:var(--gold); background:#FFFDF4;}
+  .sc-input::placeholder{color:#bbb; font-weight:400; font-size:12.5px;}
+  .sc-textarea{resize:vertical; min-height:38px; line-height:1.6; border:1px solid #B8862E44; border-radius:6px; padding:6px 8px;}
+  select.sc-input{cursor:pointer;}
+
+  .sc-radio-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:5px;}
+  .sc-radio{display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--green-deep); cursor:pointer;}
+  .sc-radio input{margin:0; cursor:pointer; accent-color:var(--green);}
+
+  .sc-decl{font-size:12.5px; color:#3a4a3e; line-height:1.9; padding:6px 2px;}
+
+  .sc-note-box{
+    background:#FFF8E6; border:1.5px dashed var(--gold); border-radius:8px;
+    margin:10px 14px; padding:10px 14px; font-size:12px; color:#6B4B0E; line-height:1.75;
+  }
+
+  .sig-box{
+    position:relative; border:1.5px solid #B8862E55; border-radius:6px;
+    background:#FFFEFA; margin-top:4px; height:92px; overflow:hidden;
+  }
+  .sig-box canvas{display:block; width:100%; height:100%; cursor:crosshair; touch-action:none;}
+  .sig-img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none;}
+  .sig-actions{display:flex; align-items:center; gap:10px; margin-top:5px; flex-wrap:wrap;}
+
+  /* branding toggle row */
+  .branding-row{
+    display:flex; align-items:center; gap:10px; padding:10px 16px;
+    background:var(--th-bg); border-bottom:1px solid var(--line);
+  }
+
+  @media print{
+    .sc-input{border-bottom:1.5px solid #999 !important; background:transparent !important; color:#000 !important;}
+    .sc-textarea{border:1px solid #999 !important;}
+    .sig-actions, .branding-row{display:none !important;}
+    .sc-radio input{-webkit-appearance:auto; appearance:auto;}
+    .sc-note-box{background:#FFF8E6 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
+
   @media print{
     .no-print, .sidebar, .main>*:not(#panel-portal){ display:none!important; }
     #panel-portal{ display:block!important; }
@@ -396,13 +441,15 @@
       <div class="card">
         <h3>السنة الأولى متوسط (وافدون جدد + معيدو الأولى)</h3>
         <div class="hint">لا يوجد "فوج سابق" لهذا المستوى — التوزيع يُبنى بالكامل من جديد حسب حجم القسم المستهدف</div>
-        <div class="schoolmap-row">
+        <div class="schoolmap-row" style="grid-template-columns:110px 1fr 1fr 1fr 1fr;">
           <div class="sm-lvl">أولى متوسط</div>
-          <div class="sm-stat">الأفواج الحالية (هذا العام)<br><b id="sm1-current-sec">—</b></div>
-          <div class="sm-stat">عدد التلاميذ المرتقَب (وافدون + معيدون)<br><b id="sm1-pool">—</b></div>
+          <div class="sm-stat">الأفواج الحالية<br><b id="sm1-current-sec">—</b></div>
+          <div class="sm-stat">التلاميذ المرتقَبون<br><b id="sm1-pool">—</b></div>
           <div class="field"><label>حجم القسم المستهدف</label><input type="number" id="targetSize1" min="18" max="45" value="32"></div>
+          <div class="field"><label style="color:var(--gold);">🎯 أقسام السنة الجديدة</label>
+            <input type="number" id="newSections1" min="1" max="40" placeholder="تلقائي" style="border-color:var(--gold);"></div>
         </div>
-        <div class="alert info">عدد الأقسام الجديدة المقترح: <b id="sectionsCount1">—</b> قسم</div>
+        <div class="alert info">عدد الأقسام الجديدة: <b id="sectionsCount1">—</b> قسم <span id="sectionsCount1Mode" style="font-size:11px;color:var(--ink-soft);"></span></div>
         <div class="toggle-row">
           <div class="switch"><input type="checkbox" id="mergeRepeaters1" checked><div class="track"><div class="knob"></div></div></div>
           <div><div class="lbl-main">دمج معيدي الأولى مع الوافدين الجدد في توزيع واحد</div>
@@ -552,9 +599,19 @@
       <!-- Student card output area -->
       <div id="portalCardArea" style="display:none;">
         <div class="card" style="padding:0; overflow:hidden;">
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line);">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; gap:10px;">
             <h3 style="margin:0;">بطاقة استعلامات التلميذ</h3>
-            <button class="btn ghost small no-print" onclick="window.print()">🖨 طباعة البطاقة</button>
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+              <label class="filter-chip no-print" style="cursor:pointer;">
+                <input type="checkbox" id="hideBrandingChk"> إخفاء حقوق الملكية عند الطباعة
+              </label>
+              <button class="btn ghost small no-print" onclick="window.print()">🖨 طباعة / حفظ PDF</button>
+            </div>
+          </div>
+          <div class="alert info no-print" style="margin:12px 18px 0; font-size:12.5px;">
+            ✍️ <b>ملء إلكتروني:</b> يمكنك تعبئة كل الحقول القابلة للتحرير مباشرة هنا،
+            والتوقيع بالفأرة أو بإصبعك في خانة الإمضاء، ثم الطباعة أو الحفظ كـ PDF.
+            كل ما تكتبه يُحفظ تلقائيًا.
           </div>
           <div id="portalCard"></div>
         </div>
@@ -642,6 +699,9 @@ let STATE = {
     avoidSameSection: true   // المعيد لا يعود لنفس قسمه السابق
   },
   overrides: {}, genderOverrides: {}, deletedUids: {},
+  studentExtras: {},   // uid -> {guardian, guardianRel, phone1, phone2, address, siblings, orphan, illness, notes, signature}
+  hideBranding: false,  // إخفاء حقوق الملكية عند الطباعة
+  newSectionsCount: {1:null,2:null,3:null,4:null}, // عدد أقسام السنة الجديدة (يدوي)
   results: null,
   activeSubTab: {1:null,2:null,3:null,4:null},
   filterRepeatOnly: {1:false,2:false,3:false,4:false},
@@ -802,7 +862,7 @@ function runDistribution(){
      Phase 3: rotate repeaters (avoid same section)
   ═══════════════════════════════════════════════════════════ */
   const pool1   = POOLS[1].slice();
-  const n1      = Math.max(1, Math.ceil(pool1.length / cfg.targetSize1));
+  const n1      = STATE.newSectionsCount[1] || Math.max(1, Math.ceil(pool1.length / cfg.targetSize1));
   const keys1   = Array.from({length:n1}, (_,i)=>i+1);
   const {counts:c1, result:r1} = freshCounts(keys1);
   const repCounts1 = {};
@@ -855,7 +915,7 @@ function runDistribution(){
 
     if (cfg.levelMode[lvl] === 'rebalance'){
       const target = cfg.levelTargetSize[lvl];
-      const n = Math.max(1, Math.ceil(POOLS[lvl].length / target));
+      const n = STATE.newSectionsCount[lvl] || Math.max(1, Math.ceil(POOLS[lvl].length / target));
       keys = Array.from({length:n}, (_,i)=>i+1);
       ({counts, result} = freshCounts(keys));
       // Seed top promoted students then greedy fill
@@ -877,6 +937,13 @@ function runDistribution(){
       // Identity mode: promoted follow mapping, repeaters rotate
       const mapping = getMapping(lvl);
       keys = newSectionKeysFor(lvl);
+      // honour manual "new sections" count in identity mode too
+      const manualCount = STATE.newSectionsCount[lvl];
+      if (manualCount && manualCount > keys.length){
+        const maxK = Math.max(...keys.map(Number), 0);
+        for (let i = keys.length + 1; i <= manualCount; i++) keys.push(maxK + (i - keys.length));
+        keys = Array.from(new Set(keys)).sort((a,b)=>Number(a)-Number(b));
+      }
       ({counts, result} = freshCounts(keys));
 
       // Place promoted students into their mapped section (identity)
@@ -934,6 +1001,7 @@ function persist(){
       await window.storage.set('distribution-state', JSON.stringify({
         institution: STATE.institution, config: STATE.config, overrides: STATE.overrides,
         genderOverrides: STATE.genderOverrides, deletedUids: STATE.deletedUids, extraSections: STATE._extraSections,
+        studentExtras: STATE.studentExtras, hideBranding: STATE.hideBranding, newSectionsCount: STATE.newSectionsCount,
         darkMode: STATE.darkMode
       }), false);
     }catch(e){ console.warn('save failed', e); }
@@ -956,6 +1024,9 @@ async function restore(){
       if (p.genderOverrides) STATE.genderOverrides = p.genderOverrides;
       if (p.deletedUids) STATE.deletedUids = p.deletedUids;
       if (p.extraSections) STATE._extraSections = p.extraSections;
+      if (p.studentExtras) STATE.studentExtras = p.studentExtras;
+      if (typeof p.hideBranding === 'boolean') STATE.hideBranding = p.hideBranding;
+      if (p.newSectionsCount) STATE.newSectionsCount = Object.assign({1:null,2:null,3:null,4:null}, p.newSectionsCount);
       if (typeof p.darkMode === 'boolean') STATE.darkMode = p.darkMode;
     }
   }catch(e){}
@@ -1244,7 +1315,11 @@ function renderSchoolMap(){
   document.getElementById('optRepeaterRotation').checked = opts.repeaterRotation  !== false;
   document.getElementById('optAvoidSameSection').checked = opts.avoidSameSection  !== false;
   document.getElementById('optGenderBalance').checked    = opts.genderBalance     !== false;
-  document.getElementById('sectionsCount1').textContent = Math.max(1, Math.ceil(POOLS[1].length/STATE.config.targetSize1));
+  const autoN1 = Math.max(1, Math.ceil(POOLS[1].length/STATE.config.targetSize1));
+  const manualN1 = STATE.newSectionsCount[1];
+  document.getElementById('newSections1').value = manualN1 || '';
+  document.getElementById('sectionsCount1').textContent = manualN1 || autoN1;
+  document.getElementById('sectionsCount1Mode').textContent = manualN1 ? '(محدَّد يدويًا — المقترح تلقائيًا: '+autoN1+')' : '(محسوب تلقائيًا من حجم القسم)';
   [2,3,4].forEach(lvl=>renderLevelMapCard(lvl));
   updateDistPreview();
 }
@@ -1267,12 +1342,16 @@ function renderLevelMapCard(lvl){
   } else {
     body = renderMappingTable(lvl, fromLabel);
   }
+  const manualN = STATE.newSectionsCount[lvl];
+  const effectiveN = manualN || (mode==='rebalance' ? suggestedN : newSectionKeysFor(lvl).length);
   card.innerHTML = `
     <h3>الانتقال إلى ${LEVEL_LABEL[lvl]}</h3>
-    <div class="schoolmap-row" style="grid-template-columns:120px 1fr 1fr auto;">
+    <div class="schoolmap-row" style="grid-template-columns:100px 90px 110px 130px auto;">
       <div class="sm-lvl">${LEVEL_LABEL[lvl]}</div>
       <div class="sm-stat">الأفواج الحالية<br><b>${currentSectionsCount}</b></div>
-      <div class="sm-stat">التلاميذ المرتقَبون للعام القادم<br><b>${poolSize}</b></div>
+      <div class="sm-stat">التلاميذ المرتقَبون<br><b>${poolSize}</b></div>
+      <div class="field"><label style="color:var(--gold);">🎯 أقسام السنة الجديدة</label>
+        <input type="number" min="1" max="40" value="${manualN||''}" placeholder="${effectiveN}" data-new-sections="${lvl}" style="border-color:var(--gold); width:100%;"></div>
       <div class="segmented" data-seg-level="${lvl}">
         <div class="seg ${mode==='identity'?'active':''}" data-mode="identity">الحفاظ على الأفواج الحالية</div>
         <div class="seg ${mode==='rebalance'?'active':''}" data-mode="rebalance">إعادة توزيع متوازن بالكامل</div>
@@ -1283,6 +1362,12 @@ function renderLevelMapCard(lvl){
 
   card.querySelectorAll('[data-seg-level] .seg').forEach(seg=>{
     seg.addEventListener('click', ()=>{ STATE.config.levelMode[lvl] = seg.dataset.mode; persist(); rerun(); });
+  });
+  const nsInput = card.querySelector('[data-new-sections]');
+  if (nsInput) nsInput.addEventListener('input', e=>{
+    const v = Number(e.target.value);
+    STATE.newSectionsCount[lvl] = (v && v>0) ? v : null;
+    persist(); rerun();
   });
   if (mode==='rebalance'){
     const inp = card.querySelector('[data-level-target]');
@@ -1761,6 +1846,9 @@ function buildBackupSnapshot(){
     genderOverrides: STATE.genderOverrides,
     deletedUids: STATE.deletedUids,
     extraSections: STATE._extraSections,
+    studentExtras: STATE.studentExtras,
+    hideBranding: STATE.hideBranding,
+    newSectionsCount: STATE.newSectionsCount,
     darkMode: STATE.darkMode
   };
 }
@@ -1794,6 +1882,9 @@ async function restoreBackup(file){
     STATE.genderOverrides = snapshot.genderOverrides || {};
     STATE.deletedUids = snapshot.deletedUids || {};
     STATE._extraSections = snapshot.extraSections || {1:[],2:[],3:[],4:[]};
+    STATE.studentExtras = snapshot.studentExtras || {};
+    STATE.hideBranding = !!snapshot.hideBranding;
+    STATE.newSectionsCount = Object.assign({1:null,2:null,3:null,4:null}, snapshot.newSectionsCount||{});
     if (typeof snapshot.darkMode === 'boolean'){ STATE.darkMode = snapshot.darkMode; applyDarkMode(); }
 
     _importedCurrent = []; _importedNewArrivals = [];
@@ -2049,216 +2140,208 @@ function portalShowCard(src, idOrRank){
   const candidates = window._portalCandidates || [];
   const cd = candidates.find(x => x.src===src && String(x.record.id||x.record.rank)===String(idOrRank));
   if (!cd) return;
-
-  const r   = cd.record;
+  const r = cd.record;
   const inst = STATE.institution;
+  const uid = (src==='current' ? 'C-'+r.id : 'N-'+r.rank);
+  const ex  = STATE.studentExtras[uid] || {};
+  window._currentCardUid = uid;
 
-  /* ── find where this student is distributed (if results exist) ── */
-  let newSection = null, newLevel = null, distStatus = null;
-  if (STATE.results && src === 'current'){
+  /* ── locate distribution placement ── */
+  let newSection=null, newLevel=null;
+  if (STATE.results){
     [1,2,3,4].forEach(lvl=>{
       const sec = STATE.results[lvl] && STATE.results[lvl].sections;
       if (!sec) return;
       Object.keys(sec).forEach(k=>{
-        const found = sec[k].find(s => s.uid === 'C-'+r.id);
-        if (found){ newSection = k; newLevel = lvl; distStatus = found.status; }
+        if (sec[k].find(s=>s.uid===uid)){ newSection=k; newLevel=lvl; }
       });
     });
   }
-  if (STATE.results && src === 'new_arrival'){
-    const sec = STATE.results[1] && STATE.results[1].sections;
-    if (sec) Object.keys(sec).forEach(k=>{
-      const found = sec[k].find(s => s.uid === 'N-'+r.rank);
-      if (found){ newSection = k; newLevel = 1; distStatus = found.status; }
-    });
-  }
 
-  /* ── decision text ── */
-  const decLabel = {P:'ينتقل ↑', R:'يعيد السنة 🔁', L:'ناجح — يغادر المؤسسة ✓', V:'يوجَّه للتكوين المهني 🏫'};
-  const decClass = {P:'promoted', R:'repeat', L:'promoted', V:'repeat'};
-  const statusTxt = src==='new_arrival' ? 'وافد جديد من الابتدائي'
-    : (decLabel[r.dec] || '—');
+  const decLabel={P:'ينتقل ↑',R:'يعيد السنة 🔁',L:'ناجح — يغادر ✓',V:'يوجَّه للتكوين المهني 🏫'};
+  const decClass={P:'promoted',R:'repeat',L:'promoted',V:'repeat'};
+  const statusTxt = src==='new_arrival' ? 'وافد جديد من الابتدائي' : (decLabel[r.dec]||'—');
   const statusCls = src==='new_arrival' ? 'new' : (decClass[r.dec]||'promoted');
 
-  /* ── new year placement text ── */
-  let placementHtml = '';
-  if (newSection !== null){
-    placementHtml = `<span class="sc-status-chip promoted">
-      ✓ الفوج القادم: ${newSection} · ${LEVEL_LABEL[newLevel]}
-    </span>`;
-  } else if (!STATE.results){
-    placementHtml = `<span style="color:var(--ink-soft);font-size:12px;">التوزيع للعام القادم لم يُنفَّذ بعد — انتقل للخريطة المدرسية</span>`;
-  } else {
-    placementHtml = `<span style="color:var(--ink-soft);font-size:12px;">غير موجود في التوزيع (محذوف أو مغادر)</span>`;
-  }
+  const placementHtml = newSection!==null
+    ? `<span class="sc-status-chip promoted">✓ الفوج القادم: ${newSection} · ${LEVEL_LABEL[newLevel]}</span>`
+    : (!STATE.results
+        ? '<span style="color:var(--ink-soft);font-size:12px;">التوزيع لم يُنفَّذ بعد</span>'
+        : '<span style="color:var(--ink-soft);font-size:12px;">غير موجود في التوزيع</span>');
 
-  /* ── build the card HTML ── */
+  /* editable input helper */
+  const ei = (key, ph, w) => `<input class="sc-input" data-ex="${key}" value="${(ex[key]||'').replace(/"/g,'&quot;')}" placeholder="${ph||''}" ${w?`style="${w}"`:''}>`;
+  const et = (key, ph) => `<textarea class="sc-input sc-textarea" data-ex="${key}" placeholder="${ph||''}" rows="2">${ex[key]||''}</textarea>`;
+
   const card = `
   <div class="student-card" id="printableCard">
     <div class="sc-header">
-      <div style="display:flex; flex-direction:column; gap:2px; text-align:center; min-width:54px;">
-        <span style="font-size:32px; line-height:1;">🇩🇿</span>
-      </div>
-      <div class="sc-inst" style="text-align:center; flex:1;">
-        <div class="sc-inst-name">الجمهورية الجزائرية الديمقراطية الشعبية</div>
+      <div style="text-align:center;min-width:50px;"><span style="font-size:30px;">🇩🇿</span></div>
+      <div class="sc-inst" style="text-align:center;flex:1;">
+        <div class="sc-inst-name">${inst.republic||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
         <div class="sc-inst-sub">${inst.ministry||'وزارة التربية الوطنية'}</div>
-        ${inst.directorate ? `<div class="sc-inst-sub">مديرية التربية لولاية ${inst.directorate}</div>` : ''}
-        <div class="sc-inst-name" style="margin-top:4px; font-size:17px;">${inst.school||'المتوسطة'}</div>
+        ${inst.directorate?`<div class="sc-inst-sub">مديرية التربية لولاية ${inst.directorate}</div>`:''}
+        <div class="sc-inst-name" style="margin-top:4px;font-size:17px;">${inst.school||'المتوسطة'}</div>
       </div>
       <div class="sc-badge">${inst.year||'2026/2027'}</div>
     </div>
 
     <div class="sc-title">📋 بطاقة استعلامات التلميذ</div>
 
-    <!-- TOP ROW: photo + basic info -->
     <div class="sc-top-row">
       <div class="sc-photo-area">👤</div>
       <div class="sc-top-fields">
-        <div class="sc-field">
-          <label>اللقب</label><div class="val">${r.ln}</div>
-        </div>
-        <div class="sc-field">
-          <label>الاسم</label><div class="val">${r.fn}</div>
-        </div>
-        <div class="sc-field">
-          <label>الجنس</label><div class="val">${r.g==='M'?'ذكر':'أنثى'}</div>
-        </div>
-        <div class="sc-field">
-          <label>تاريخ الميلاد</label><div class="val">${r.dob}</div>
-        </div>
-        <div class="sc-field full">
-          <label>المستوى الدراسي الحالي</label>
-          <div class="val">${src==='new_arrival' ? 'وافد جديد — السنة الأولى متوسط' : LEVEL_LABEL[r.lvl]+' · فوج '+r.sec}</div>
-        </div>
+        <div class="sc-field"><label>اللقب</label><div class="val">${r.ln}</div></div>
+        <div class="sc-field"><label>الاسم</label><div class="val">${r.fn}</div></div>
+        <div class="sc-field"><label>الجنس</label><div class="val">${r.g==='M'?'ذكر':'أنثى'}</div></div>
+        <div class="sc-field"><label>تاريخ الميلاد</label><div class="val">${r.dob}</div></div>
+        <div class="sc-field full"><label>المستوى الدراسي الحالي</label>
+          <div class="val">${src==='new_arrival'?'وافد جديد — السنة الأولى متوسط':LEVEL_LABEL[r.lvl]+' · فوج '+r.sec}</div></div>
       </div>
     </div>
 
     <div class="sc-body">
-      <!-- SECTION: Academic results (current students only) -->
-      ${src==='current' ? `
+      <!-- ═══ CONTACT INFO (editable) ═══ -->
+      <div class="sc-section">
+        <div class="sc-section-head">📞 معلومات الاتصال والعنوان</div>
+        <div class="sc-fields">
+          <div class="sc-field"><label>رقم هاتف الولي (1)</label>${ei('phone1','06XXXXXXXX')}</div>
+          <div class="sc-field"><label>رقم هاتف الولي (2)</label>${ei('phone2','اختياري')}</div>
+          <div class="sc-field full"><label>العنوان الشخصي الكامل</label>${ei('address','الحي / الشارع / البلدية / الولاية')}</div>
+        </div>
+      </div>
+
+      <!-- ═══ SOCIAL / FAMILY ═══ -->
+      <div class="sc-section">
+        <div class="sc-section-head">👨‍👩‍👧‍👦 الوضعية العائلية والاجتماعية</div>
+        <div class="sc-fields">
+          <div class="sc-field"><label>عدد الإخوة والأخوات</label>${ei('siblings','مثال: 3')}</div>
+          <div class="sc-field"><label>رتبته بين الإخوة</label>${ei('birthOrder','مثال: الثاني')}</div>
+          <div class="sc-field full">
+            <label>هل التلميذ يتيم؟</label>
+            <div class="sc-radio-row">
+              <label class="sc-radio"><input type="radio" name="orph_${uid}" data-ex="orphan" value="لا" ${(!ex.orphan||ex.orphan==='لا')?'checked':''}> لا</label>
+              <label class="sc-radio"><input type="radio" name="orph_${uid}" data-ex="orphan" value="يتيم الأب" ${ex.orphan==='يتيم الأب'?'checked':''}> يتيم الأب</label>
+              <label class="sc-radio"><input type="radio" name="orph_${uid}" data-ex="orphan" value="يتيم الأم" ${ex.orphan==='يتيم الأم'?'checked':''}> يتيم الأم</label>
+              <label class="sc-radio"><input type="radio" name="orph_${uid}" data-ex="orphan" value="يتيم الأبوين" ${ex.orphan==='يتيم الأبوين'?'checked':''}> يتيم الأبوين</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HEALTH ═══ -->
+      <div class="sc-section">
+        <div class="sc-section-head">🏥 الحالة الصحية</div>
+        <div class="sc-fields">
+          <div class="sc-field full">
+            <label>هل يعاني التلميذ من مرض مزمن أو إعاقة؟</label>
+            <div class="sc-radio-row">
+              <label class="sc-radio"><input type="radio" name="ill_${uid}" data-ex="hasIllness" value="لا" ${(!ex.hasIllness||ex.hasIllness==='لا')?'checked':''}> لا</label>
+              <label class="sc-radio"><input type="radio" name="ill_${uid}" data-ex="hasIllness" value="نعم" ${ex.hasIllness==='نعم'?'checked':''}> نعم — أذكرها أدناه</label>
+            </div>
+          </div>
+          <div class="sc-field full"><label>إن كانت الإجابة نعم، اذكر المرض أو الإعاقة</label>${et('illness','مثال: ربو — سكري — إعاقة حركية...')}</div>
+          <div class="sc-field full"><label>ملاحظات إضافية (اختياري)</label>${et('notes','أي معلومة تراها الإدارة مفيدة')}</div>
+        </div>
+      </div>
+
+      ${src==='current'?`
+      <!-- ═══ ACADEMIC ═══ -->
       <div class="sc-section">
         <div class="sc-section-head">📊 النتائج الدراسية — السنة الحالية</div>
         <div class="sc-fields">
-          <div class="sc-field">
-            <label>معدل الفصل الأول</label>
-            <div class="val">${r.t1!=null?r.t1.toFixed(2):'—'}/20</div>
-          </div>
-          <div class="sc-field">
-            <label>معدل الفصل الثاني</label>
-            <div class="val">${r.t2!=null?r.t2.toFixed(2):'—'}/20</div>
-          </div>
-          <div class="sc-field">
-            <label>معدل الفصل الثالث</label>
-            <div class="val">${r.t3!=null?r.t3.toFixed(2):'—'}/20</div>
-          </div>
-          <div class="sc-field">
-            <label>المعدل السنوي</label>
-            <div class="val highlight">${r.avg!=null?r.avg.toFixed(2):'—'}/20</div>
-          </div>
-          <div class="sc-field full">
-            <label>قرار مجلس الأساتذة</label>
+          <div class="sc-field"><label>معدل الفصل الأول</label><div class="val">${r.t1!=null?r.t1.toFixed(2):'—'}/20</div></div>
+          <div class="sc-field"><label>معدل الفصل الثاني</label><div class="val">${r.t2!=null?r.t2.toFixed(2):'—'}/20</div></div>
+          <div class="sc-field"><label>معدل الفصل الثالث</label><div class="val">${r.t3!=null?r.t3.toFixed(2):'—'}/20</div></div>
+          <div class="sc-field"><label>المعدل السنوي</label><div class="val highlight">${r.avg!=null?r.avg.toFixed(2):'—'}/20</div></div>
+          <div class="sc-field full"><label>قرار مجلس الأساتذة</label>
             <div style="margin-top:4px;">
               <span class="sc-status-chip ${statusCls}">${statusTxt}</span>
-              ${r.b10 ? '<span class="sc-status-chip new" style="margin-right:8px;">★ مولود 2010 — حق الإعادة</span>' : ''}
-            </div>
-          </div>
+              ${r.b10?'<span class="sc-status-chip new" style="margin-right:8px;">★ مولود 2010 — حق الإعادة</span>':''}
+            </div></div>
         </div>
-      </div>` : `
+      </div>`:`
       <div class="sc-section">
         <div class="sc-section-head">📥 معلومات القبول والتوجيه</div>
         <div class="sc-fields">
-          <div class="sc-field">
-            <label>معدل القبول</label>
-            <div class="val highlight">${r.avg!=null?r.avg.toFixed(2):'—'}/10</div>
-          </div>
-          <div class="sc-field">
-            <label>المؤسسة الأصلية (الابتدائية)</label>
-            <div class="val">${r.origin||'—'}</div>
-          </div>
-          <div class="sc-field full">
-            <label>الوضع</label>
-            <div style="margin-top:4px;"><span class="sc-status-chip new">وافد جديد — يلتحق بالسنة الأولى متوسط</span></div>
-          </div>
+          <div class="sc-field"><label>معدل القبول</label><div class="val highlight">${r.avg!=null?r.avg.toFixed(2):'—'}/10</div></div>
+          <div class="sc-field"><label>المؤسسة الأصلية</label><div class="val">${r.origin||'—'}</div></div>
+          <div class="sc-field full"><label>الوضع</label>
+            <div style="margin-top:4px;"><span class="sc-status-chip new">وافد جديد — يلتحق بالسنة الأولى متوسط</span></div></div>
         </div>
       </div>`}
 
-      <!-- SECTION: Next year placement -->
+      <!-- ═══ PLACEMENT ═══ -->
       <div class="sc-section">
         <div class="sc-section-head">📅 التوزيع للسنة الدراسية ${inst.year||'القادمة'}</div>
         <div class="sc-fields">
-          <div class="sc-field full">
-            <label>الفوج المقترح للعام القادم</label>
-            <div style="margin-top:6px;">${placementHtml}</div>
-          </div>
+          <div class="sc-field full"><label>الفوج المقترح للعام القادم</label>
+            <div style="margin-top:6px;">${placementHtml}</div></div>
         </div>
       </div>
 
-      <!-- SECTION: Guardian declaration (blank fields for print) -->
+      <!-- ═══ GUARDIAN DECLARATION ═══ -->
       <div class="sc-section">
         <div class="sc-section-head">✍️ تصريح أبوي</div>
         <div class="sc-fields">
-          <div class="sc-field">
-            <label>اسم ولي الأمر</label>
-            <div class="val" style="min-height:28px;"></div>
-          </div>
-          <div class="sc-field">
-            <label>رقم بطاقة التعريف</label>
-            <div class="val" style="min-height:28px;"></div>
-          </div>
-          <div class="sc-field">
-            <label>تاريخ الإصدار</label>
-            <div class="val" style="min-height:28px;"></div>
-          </div>
-          <div class="sc-field">
-            <label>الصادرة عن دائرة</label>
-            <div class="val" style="min-height:28px;"></div>
-          </div>
+          <div class="sc-field"><label>اسم ولقب ولي الأمر</label>${ei('guardian','الاسم الكامل')}</div>
+          <div class="sc-field"><label>صفته</label>
+            <select class="sc-input" data-ex="guardianRel">
+              <option value="">— اختر —</option>
+              ${['الأب','الأم','الأخ','الأخت','الجد','الجدة','الوصي الشرعي'].map(o=>`<option ${ex.guardianRel===o?'selected':''}>${o}</option>`).join('')}
+            </select></div>
+          <div class="sc-field"><label>رقم بطاقة التعريف</label>${ei('idNumber','')}</div>
+          <div class="sc-field"><label>الصادرة عن دائرة</label>${ei('idIssuer','')}</div>
           <div class="sc-field full" style="margin-top:4px;">
-            <label>التصريح</label>
-            <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:4px;">
-              أصرح بسرفي بأن ابني/ابنتي <b>${r.fn} ${r.ln}</b> المتمدرس(ة) في ${inst.school||'المؤسسة'}
+            <label>نص التصريح</label>
+            <div class="sc-decl">
+              أنا الممضي أسفله، ولي التلميذ(ة) <b>${r.ln} ${r.fn}</b> المتمدرس(ة) بـ${inst.school||'المؤسسة'}
               — ${src==='current'?LEVEL_LABEL[r.lvl]:'السنة الأولى متوسط'}${newSection?(' — فوج '+newSection):''} —
-              السنة الدراسية ${inst.year||'2026/2027'}، يسمح له/لها بالمشاركة في جميع التظاهرات الرياضية والثقافية
-              داخل وخارج المؤسسة، والتزم بالقانون الداخلي.
+              السنة الدراسية ${inst.year||'2026/2027'}، أصرّح بشرفي بأنني أسمح لابني/ابنتي بالمشاركة في جميع
+              التظاهرات الرياضية والثقافية التي تبرمجها المؤسسة داخلها وخارجها، وألتزم بالقانون الداخلي للمؤسسة.
             </div>
           </div>
           <div class="sc-field">
-            <label>امضاء ولي الأمر الشرعي</label>
-            <div class="val" style="min-height:40px;"></div>
+            <label>إمضاء ولي الأمر الشرعي</label>
+            <div class="sig-box" id="sigBox">
+              <canvas id="sigCanvas" width="300" height="90"></canvas>
+              ${ex.signature?`<img class="sig-img" src="${ex.signature}" alt="إمضاء">`:''}
+            </div>
+            <div class="sig-actions no-print">
+              <button class="btn ghost small" id="sigClearBtn" type="button">✕ مسح الإمضاء</button>
+              <span style="font-size:10.5px;color:var(--ink-soft);">وقّع بالفأرة أو بإصبعك على الشاشة</span>
+            </div>
           </div>
-          <div class="sc-field">
-            <label>مصادقة البلدية</label>
-            <div class="val" style="min-height:40px;"></div>
-          </div>
+          <div class="sc-field"><label>مصادقة البلدية</label><div class="val" style="min-height:70px;"></div></div>
         </div>
       </div>
 
-      <!-- SECTION: Medical -->
+      <!-- ═══ MEDICAL ═══ -->
       <div class="sc-section">
         <div class="sc-section-head">🩺 شهادة طبية عامة وصدرية</div>
+        <div class="sc-note-box">
+          ⚠️ <b>ملاحظة هامة:</b> الشهادة الطبية <b>ليست إجبارية</b> لجميع التلاميذ.
+          يُكتفى بتقديم <b>ملف طبي</b> للحالات الخاصة أو لمن يعانون من أمراض مزمنة أو إعاقات
+          تستدعي متابعة أو إعفاءً من بعض الأنشطة.
+        </div>
         <div class="sc-fields">
           <div class="sc-field full">
-            <label>شهادة</label>
-            <div style="font-size:12px; color:var(--ink-soft); margin-top:4px;">
-              أشهد أن التلميذ(ة) <b>${r.fn} ${r.ln}</b> لا يعاني من أي مرض أو عارض يحول دون
-              ممارسته للأنشطة الرياضية والثقافية داخل المؤسسة وخارجها.
+            <div class="sc-decl">
+              أنا الطبيب(ة) الممضي أسفله، أشهد بأن التلميذ(ة) <b>${r.ln} ${r.fn}</b>
+              لا يعاني من أي مرض أو عارض صحي يحول دون ممارسته للأنشطة الرياضية والثقافية
+              داخل المؤسسة وخارجها.
             </div>
           </div>
-          <div class="sc-field">
-            <label>امضاء الطبيب</label>
-            <div class="val" style="min-height:40px;"></div>
-          </div>
-          <div class="sc-field">
-            <label>ختم الطبيب</label>
-            <div class="val" style="min-height:40px;"></div>
-          </div>
+          <div class="sc-field"><label>إمضاء الطبيب(ة)</label><div class="val" style="min-height:60px;"></div></div>
+          <div class="sc-field"><label>ختم الطبيب(ة)</label><div class="val" style="min-height:60px;"></div></div>
         </div>
       </div>
     </div>
 
     <div class="sc-footer">
-      <span>رقم التعريف: ${r.id || ('وافد-'+r.rank)}</span>
-      <span class="brand">DONIA SMART CLASSE — DONIA LABS TECH</span>
+      <span>رقم التعريف: ${r.id||('وافد-'+r.rank)}</span>
+      <span class="brand brand-credit">DONIA SMART CLASSE — DONIA LABS TECH</span>
+      <span class="brand brand-school" style="display:none;">${inst.school||''}</span>
       <span>طُبع بتاريخ: ${new Date().toLocaleDateString('ar-DZ')}</span>
     </div>
   </div>`;
@@ -2266,7 +2349,79 @@ function portalShowCard(src, idOrRank){
   document.getElementById('portalCard').innerHTML = card;
   document.getElementById('portalCardArea').style.display = 'block';
   document.getElementById('portalResult').innerHTML = '';
-  document.getElementById('portalCardArea').scrollIntoView({behavior:'smooth'});
+
+  wireCardInputs(uid);
+  initSignaturePad(uid);
+  applyBrandingMode();
+}
+
+/* ─── save edits into STATE.studentExtras ─── */
+function wireCardInputs(uid){
+  const root = document.getElementById('portalCard');
+  if (!root) return;
+  if (!STATE.studentExtras[uid]) STATE.studentExtras[uid] = {};
+  root.querySelectorAll('[data-ex]').forEach(el=>{
+    const key = el.dataset.ex;
+    const evt = (el.type==='radio') ? 'change' : 'input';
+    el.addEventListener(evt, ()=>{
+      if (el.type==='radio'){ if (el.checked) STATE.studentExtras[uid][key] = el.value; }
+      else STATE.studentExtras[uid][key] = el.value;
+      persist();
+    });
+  });
+}
+
+/* ─── signature pad (mouse + touch) ─── */
+function initSignaturePad(uid){
+  const canvas = document.getElementById('sigCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1F3A24';
+  let drawing = false, hasDrawn = false;
+
+  const pos = e => {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX-rect.left)*(canvas.width/rect.width),
+             y: (t.clientY-rect.top)*(canvas.height/rect.height) };
+  };
+  const start = e => { e.preventDefault(); drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
+  const move  = e => { if(!drawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasDrawn=true; };
+  const stop  = () => {
+    if (!drawing) return;
+    drawing = false;
+    if (hasDrawn){
+      if (!STATE.studentExtras[uid]) STATE.studentExtras[uid] = {};
+      STATE.studentExtras[uid].signature = canvas.toDataURL('image/png');
+      persist();
+      const box = document.getElementById('sigBox');
+      const old = box.querySelector('.sig-img');
+      if (old) old.remove();
+    }
+  };
+  canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',stop);
+  canvas.addEventListener('touchstart',start,{passive:false});
+  canvas.addEventListener('touchmove',move,{passive:false});
+  canvas.addEventListener('touchend',stop);
+
+  const clearBtn = document.getElementById('sigClearBtn');
+  if (clearBtn) clearBtn.addEventListener('click', ()=>{
+    ctx.clearRect(0,0,canvas.width,canvas.height); hasDrawn=false;
+    if (STATE.studentExtras[uid]) delete STATE.studentExtras[uid].signature;
+    const box = document.getElementById('sigBox');
+    const old = box && box.querySelector('.sig-img'); if (old) old.remove();
+    persist();
+  });
+}
+
+/* ─── branding visibility in print ─── */
+function applyBrandingMode(){
+  const credit = document.querySelector('#portalCard .brand-credit');
+  const school = document.querySelector('#portalCard .brand-school');
+  if (!credit || !school) return;
+  if (STATE.hideBranding){ credit.style.display='none'; school.style.display='inline'; }
+  else { credit.style.display='inline'; school.style.display='none'; }
 }
 
 function portalClear(){
@@ -2423,6 +2578,30 @@ ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
 
   /* DECLARATION TEXT */
   .decl-text{font-size:12.5px; color:var(--ink-soft); line-height:1.8; margin:8px 0; padding:0 14px 12px;}
+  .p-input{width:100%; border:none; border-bottom:1.5px solid #B8862E55; background:transparent;
+    font-family:'Tajawal',sans-serif; font-size:14px; font-weight:600; color:var(--green);
+    padding:3px 2px; outline:none;}
+  .p-input:focus{border-bottom-color:var(--gold); background:#FFFDF4;}
+  .p-input::placeholder{color:#bbb; font-weight:400; font-size:12.5px;}
+  .p-textarea{resize:vertical; min-height:38px; line-height:1.6; border:1px solid #B8862E44; border-radius:6px; padding:6px 8px;}
+  select.p-input{cursor:pointer;}
+  .p-radio-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:5px;}
+  .p-radio{display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--green); cursor:pointer;}
+  .p-radio input{margin:0; cursor:pointer; accent-color:#1F3A24;}
+  .p-note-box{background:#FFF8E6; border:1.5px dashed var(--gold); border-radius:8px;
+    margin:10px 14px; padding:10px 14px; font-size:12px; color:#6B4B0E; line-height:1.75;}
+  .p-sig-box{position:relative; border:1.5px solid #B8862E55; border-radius:6px;
+    background:#FFFEFA; margin-top:4px; height:92px; overflow:hidden;}
+  .p-sig-box canvas{display:block; width:100%; height:100%; cursor:crosshair; touch-action:none;}
+  .p-sig-actions{display:flex; align-items:center; gap:10px; margin-top:5px; flex-wrap:wrap;}
+  .p-sig-clear{background:transparent; border:1px solid var(--line); border-radius:6px;
+    padding:3px 10px; font-size:11.5px; cursor:pointer; font-family:'Tajawal',sans-serif; color:var(--green);}
+  .fill-hint{max-width:720px; margin:0 auto 14px; padding:0 16px;}
+  .fill-hint .fh-inner{background:var(--blue-soft); border:1px solid #BFD7BC; border-radius:9px;
+    padding:11px 16px; font-size:12.5px; color:var(--green); line-height:1.8;}
+  .brand-toggle-row{max-width:720px; margin:0 auto 10px; padding:0 16px; display:flex; justify-content:flex-end;}
+  .brand-toggle-row label{display:inline-flex; align-items:center; gap:7px; font-size:12px;
+    background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; color:var(--ink-soft);}
 
   /* PRINT BUTTON */
   .print-actions{display:flex; gap:10px; justify-content:center; padding:12px 22px 20px; flex-wrap:wrap;}
@@ -2441,7 +2620,12 @@ ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
   .site-footer a{color:var(--green); font-weight:700;}
 
   @media print{
-    .site-header, .search-wrap, .print-actions, .site-footer, .no-print{display:none!important;}
+    .site-header, .search-wrap, .print-actions, .site-footer, .no-print,
+    .fill-hint, .brand-toggle-row, .p-sig-actions{display:none!important;}
+    .p-input{border-bottom:1.5px solid #999 !important; background:transparent !important; color:#000 !important;}
+    .p-textarea{border:1px solid #999 !important;}
+    .p-note-box{background:#FFF8E6 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .p-radio input{-webkit-appearance:auto; appearance:auto;}
     body{background:#fff;}
     .student-card-wrap{margin:0; padding:0; max-width:100%;}
     .scard{border:1.5px solid #1F3A24; box-shadow:none; border-radius:0;}
@@ -2590,12 +2774,52 @@ function showCard(uid){
       </div>
 
       <div class="info-section">
+        <div class="info-section-head">📞 معلومات الاتصال والعنوان</div>
+        <div class="info-fields">
+          <div class="info-field"><label>رقم هاتف الولي (1)</label><input class="p-input" placeholder="06XXXXXXXX"></div>
+          <div class="info-field"><label>رقم هاتف الولي (2)</label><input class="p-input" placeholder="اختياري"></div>
+          <div class="info-field full"><label>العنوان الشخصي الكامل</label><input class="p-input" placeholder="الحي / الشارع / البلدية / الولاية"></div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-head">👨‍👩‍👧‍👦 الوضعية العائلية والاجتماعية</div>
+        <div class="info-fields">
+          <div class="info-field"><label>عدد الإخوة والأخوات</label><input class="p-input" placeholder="مثال: 3"></div>
+          <div class="info-field"><label>رتبته بين الإخوة</label><input class="p-input" placeholder="مثال: الثاني"></div>
+          <div class="info-field full"><label>هل التلميذ يتيم؟</label>
+            <div class="p-radio-row">
+              <label class="p-radio"><input type="radio" name="orph" value="لا" checked> لا</label>
+              <label class="p-radio"><input type="radio" name="orph" value="الأب"> يتيم الأب</label>
+              <label class="p-radio"><input type="radio" name="orph" value="الأم"> يتيم الأم</label>
+              <label class="p-radio"><input type="radio" name="orph" value="الأبوين"> يتيم الأبوين</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-head">🏥 الحالة الصحية</div>
+        <div class="info-fields">
+          <div class="info-field full"><label>هل يعاني التلميذ من مرض مزمن أو إعاقة؟</label>
+            <div class="p-radio-row">
+              <label class="p-radio"><input type="radio" name="ill" value="لا" checked> لا</label>
+              <label class="p-radio"><input type="radio" name="ill" value="نعم"> نعم — أذكرها أدناه</label>
+            </div>
+          </div>
+          <div class="info-field full"><label>إن كانت الإجابة نعم، اذكر المرض أو الإعاقة</label>
+            <textarea class="p-input p-textarea" rows="2" placeholder="مثال: ربو — سكري — إعاقة حركية..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="info-section">
         <div class="info-section-head">✍️ تصريح أبوي</div>
         <div class="info-fields">
-          <div class="info-field"><label>اسم ولي الأمر</label><div class="blank"></div></div>
-          <div class="info-field"><label>رقم بطاقة التعريف</label><div class="blank"></div></div>
-          <div class="info-field"><label>تاريخ الإصدار</label><div class="blank"></div></div>
-          <div class="info-field"><label>الصادرة عن دائرة</label><div class="blank"></div></div>
+          <div class="info-field"><label>اسم ولقب ولي الأمر</label><input class="p-input" placeholder="الاسم الكامل"></div>
+          <div class="info-field"><label>صفته</label>
+            <select class="p-input"><option value="">— اختر —</option><option>الأب</option><option>الأم</option><option>الأخ</option><option>الأخت</option><option>الجد</option><option>الجدة</option><option>الوصي الشرعي</option></select></div>
+          <div class="info-field"><label>رقم بطاقة التعريف</label><input class="p-input"></div>
+          <div class="info-field"><label>الصادرة عن دائرة</label><input class="p-input"></div>
           <div class="info-field full">
             <div class="decl-text">
               أنا الممضي أسفله، ولي التلميذ(ة) <b>\${s.name}</b> المتمدرس(ة) في
@@ -2605,13 +2829,25 @@ function showCard(uid){
               داخل وخارج المؤسسة، وأن التزم بالقانون الداخلي للمؤسسة.
             </div>
           </div>
-          <div class="info-field"><label>امضاء ولي الأمر</label><div class="blank"></div></div>
-          <div class="info-field"><label>مصادقة البلدية</label><div class="blank"></div></div>
+          <div class="info-field">
+            <label>إمضاء ولي الأمر الشرعي</label>
+            <div class="p-sig-box"><canvas id="pSigCanvas" width="300" height="90"></canvas></div>
+            <div class="p-sig-actions no-print">
+              <button type="button" class="p-sig-clear" onclick="clearSig()">✕ مسح</button>
+              <span style="font-size:10.5px;color:var(--ink-soft);">وقّع بالفأرة أو بإصبعك</span>
+            </div>
+          </div>
+          <div class="info-field"><label>مصادقة البلدية</label><div class="blank" style="min-height:70px;"></div></div>
         </div>
       </div>
 
       <div class="info-section">
         <div class="info-section-head">🩺 شهادة طبية عامة وصدرية</div>
+        <div class="p-note-box">
+          ⚠️ <b>ملاحظة هامة:</b> الشهادة الطبية <b>ليست إجبارية</b> لجميع التلاميذ.
+          يُكتفى بتقديم <b>ملف طبي</b> للحالات الخاصة أو لمن يعانون من أمراض مزمنة أو إعاقات
+          تستدعي متابعة أو إعفاءً من بعض الأنشطة.
+        </div>
         <div class="info-fields">
           <div class="info-field full">
             <div class="decl-text">
@@ -2628,13 +2864,23 @@ function showCard(uid){
 
     <div class="scard-footer">
       <span>رقم: \${s.uid}</span>
-      <span class="brand">DONIA SMART CLASSE</span>
+      <span class="brand brand-credit">DONIA SMART CLASSE</span>
+      <span class="brand brand-school" style="display:none;">\${INST.school||''}</span>
       <span>\${INST.school||''} — \${INST.year||''}</span>
     </div>
   </div>\`;
 
   const wrap = document.getElementById('cardWrap');
   wrap.innerHTML = \`
+    <div class="fill-hint no-print">
+      <div class="fh-inner">
+        ✍️ <b>يمكنك تعبئة الاستمارة إلكترونيًا:</b> اكتب في الحقول أدناه، وقّع بالفأرة أو بإصبعك
+        في خانة الإمضاء، ثم اضغط "طباعة / حفظ PDF" — أو اطبعها فارغة واملأها يدويًا.
+      </div>
+    </div>
+    <div class="brand-toggle-row no-print">
+      <label><input type="checkbox" id="pHideBrand" onchange="toggleBrand(this.checked)"> إخفاء حقوق الملكية عند الطباعة</label>
+    </div>
     <div class="print-actions no-print">
       <button class="print-btn primary" onclick="window.print()">🖨 طباعة الاستمارة / حفظ PDF</button>
       <button class="print-btn ghost" onclick="document.getElementById('cardWrap').style.display='none';document.getElementById('resultArea').innerHTML=''">✕ إغلاق</button>
@@ -2645,12 +2891,48 @@ function showCard(uid){
     </div>
   \`;
   wrap.style.display = 'block';
+  initSig();
   wrap.scrollIntoView({behavior:'smooth', block:'start'});
   document.getElementById('resultArea').innerHTML = '';
 }
 
 document.getElementById('sName').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
 document.getElementById('sDob').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+
+/* ── signature pad ── */
+let _sigCtx=null, _sigDrawing=false;
+function initSig(){
+  const cv = document.getElementById('pSigCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  _sigCtx = ctx;
+  ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#1F3A24';
+  const pos = e => {
+    const rc = cv.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return {x:(t.clientX-rc.left)*(cv.width/rc.width), y:(t.clientY-rc.top)*(cv.height/rc.height)};
+  };
+  const start = e => { e.preventDefault(); _sigDrawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
+  const move  = e => { if(!_sigDrawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); };
+  const stop  = () => { _sigDrawing=false; };
+  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',stop);
+  cv.addEventListener('touchstart',start,{passive:false});
+  cv.addEventListener('touchmove',move,{passive:false});
+  cv.addEventListener('touchend',stop);
+}
+function clearSig(){
+  const cv = document.getElementById('pSigCanvas');
+  if (cv && _sigCtx) _sigCtx.clearRect(0,0,cv.width,cv.height);
+}
+/* ── branding toggle ── */
+function toggleBrand(hide){
+  const credit = document.querySelector('.brand-credit');
+  const school = document.querySelector('.brand-school');
+  if (!credit || !school) return;
+  credit.style.display = hide ? 'none' : 'inline';
+  school.style.display = hide ? 'inline' : 'none';
+}
 <\/script>
 </body>
 </html>`;
@@ -2721,6 +3003,11 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
   });
 });
 document.getElementById('targetSize1').addEventListener('input', e=>{ STATE.config.targetSize1 = Number(e.target.value)||32; persist(); rerun(); });
+document.getElementById('newSections1').addEventListener('input', e=>{
+  const v = Number(e.target.value);
+  STATE.newSectionsCount[1] = (v && v>0) ? v : null;
+  persist(); rerun();
+});
 document.getElementById('mergeRepeaters1').addEventListener('change', e=>{ STATE.config.mergeRepeaters1 = e.target.checked; persist(); rerun(); });
 ['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance'].forEach(id=>{
   document.getElementById(id).addEventListener('change', e=>{
@@ -2743,6 +3030,15 @@ document.getElementById('darkModeToggle').addEventListener('change', e=>{ STATE.
 document.getElementById('generatePortalBtn').addEventListener('click', generateStudentPortal);
 document.getElementById('portalSearchBtn').addEventListener('click', portalSearch);
 document.getElementById('portalClearBtn').addEventListener('click', portalClear);
+(function(){
+  const chk = document.getElementById('hideBrandingChk');
+  if (!chk) return;
+  chk.checked = !!STATE.hideBranding;
+  chk.addEventListener('change', e=>{
+    STATE.hideBranding = e.target.checked;
+    persist(); applyBrandingMode();
+  });
+})();
 document.getElementById('portalName').addEventListener('keydown', e=>{ if(e.key==='Enter') portalSearch(); });
 document.getElementById('portalDob').addEventListener('keydown', e=>{ if(e.key==='Enter') portalSearch(); });
 
