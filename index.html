@@ -668,6 +668,19 @@
         <div class="alert info" id="portalPublishStatus">
           ⚠️ نفّذ التوزيع أولًا من صفحة "الخريطة المدرسية" لتفعيل هذا الخيار.
         </div>
+
+        <!-- what will be embedded -->
+        <div id="portalInstPreview" style="border:1px solid var(--line); border-radius:8px; padding:12px 15px; margin-bottom:12px; background:var(--paper);">
+          <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px;">
+            📄 المعلومات التي ستُدرَج في البوابة
+          </div>
+          <div id="portalInstRows" style="font-size:12.5px; line-height:1.9;"></div>
+        </div>
+
+        <div class="alert warn" id="portalInstWarn" style="display:none;">
+          ⚠️ <b>معلومات المؤسسة ناقصة.</b> ستظهر البوابة للتلاميذ باسم عام بدل اسم مؤسستك.
+          أكمل البيانات من صفحة <b>"معلومات المؤسسة"</b> قبل التوليد.
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
           <button class="btn gold" id="generatePortalBtn" disabled style="padding:11px 22px; font-size:14px;">
             🌐 توليد البوابة الإلكترونية وتنزيلها
@@ -677,8 +690,16 @@
           </span>
         </div>
         <div class="alert ok" id="portalDownloadedMsg" style="display:none; margin-top:12px;">
-          ✓ تم توليد البوابة — ارفع الملف على مستودع GitHub الخاص بك وشارك الرابط مع التلاميذ:
-          <br><code id="portalShareUrl" style="font-size:12px; word-break:break-all;"></code>
+          <b>✓ تم توليد البوابة بنجاح</b>
+          <div style="margin-top:8px; font-size:12.5px; line-height:1.9;">
+            <b>الخطوة التالية — مهمة:</b> ارفع الملف الذي نزّل الآن إلى مستودعك على GitHub
+            <b>واستبدل به الملف القديم</b> إن وُجد. البوابة ملف ثابت — التلاميذ يرون النسخة المرفوعة فقط،
+            وأي تعديل في التطبيق (اسم المؤسسة، التوزيع، الأفواج) <b>لن يظهر لهم حتى تعيد التوليد والرفع</b>.
+          </div>
+          <div style="margin-top:8px;">رابط البوابة بعد الرفع:<br>
+            <code id="portalShareUrl" style="font-size:12px; word-break:break-all;"></code>
+          </div>
+          <div id="portalStamp" style="margin-top:8px; font-size:11.5px; color:var(--ink-soft);"></div>
         </div>
       </div>
 
@@ -782,6 +803,15 @@ rebuildPools();
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Resolve which distribution options apply to a given level ── */
+/* ── HTML escaping: student names come from imported Excel files and may
+   contain <, >, &, quotes. Never inject them raw into markup. ── */
+function esc(v){
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function optsFor(lvl){
   const cfg = STATE.config;
   if (cfg.optScope === 'custom' && cfg.levelOpts && cfg.levelOpts[lvl]){
@@ -1499,10 +1529,10 @@ function studentRowHtml(s, lvl, sectionKeys){
   const origin = s.status==='NEW' ? (s.origin||'') : (s.originSection!=null? ('فوج '+s.originSection):'');
   const opts = sectionKeys.map(k=>`<option value="${k}" ${String(k)===String(currentKeyOf(s,lvl))?'selected':''}>${k}</option>`).join('');
   return `<tr data-uid="${s.uid}">
-    <td>${s.name} ${s.b10?'<span title="مولود 2010 - له حق الإعادة" style="color:var(--gold);">★</span>':''}</td>
+    <td>${esc(s.name)} ${s.b10?'<span title="مولود 2010 - له حق الإعادة" style="color:var(--gold);">★</span>':''}</td>
     <td><button class="g-toggle" data-uid="${s.uid}" data-lvl="${lvl}" title="اضغط لتغيير الجنس">${s.g==='M'?'ذكر':'أنثى'}</button></td>
-    <td>${s.dob}</td><td>${decisionBadge(s)}</td>
-    <td style="font-size:10.5px; color:var(--ink-soft);">${origin}</td>
+    <td>${esc(s.dob)}</td><td>${decisionBadge(s)}</td>
+    <td style="font-size:10.5px; color:var(--ink-soft);">${esc(origin)}</td>
     <td>${s.avg!=null? s.avg.toFixed(2):''}</td>
     <td><select class="move-sel" data-uid="${s.uid}" data-lvl="${lvl}">${opts}</select></td>
     <td><button class="del-btn" data-uid="${s.uid}" data-lvl="${lvl}" title="حذف من القائمة">✕</button></td>
@@ -1545,7 +1575,7 @@ function renderLevelPanel(lvl){
     const male = (secObj[k]||[]).filter(s=>s.g==='M').length, female = (secObj[k]||[]).length-male;
     const repCount = (secObj[k]||[]).filter(s=>s.status==='REPEAT').length;
     return `<div class="section-card${isSingleView?' full':''}">
-      <div class="sc-head"><span class="name">فوج ${k}</span><span class="meta">${(secObj[k]||[]).length} تلميذ · ${male} ذ / ${female} إ ${repCount? ' · '+repCount+' معيد':''}</span></div>
+      <div class="sc-head"><span class="name">فوج ${esc(k)}</span><span class="meta">${(secObj[k]||[]).length} تلميذ · ${male} ذ / ${female} إ ${repCount? ' · '+repCount+' معيد':''}</span></div>
       <div class="sc-body"><table class="roster">
         <thead><tr><th>الاسم</th><th>الجنس</th><th>الميلاد</th><th>الحالة</th><th>الأصل</th><th>المعدل</th><th>نقل إلى</th><th></th></tr></thead>
         <tbody>${students.map(s=>studentRowHtml(s, lvl, keys)).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:16px;">لا يوجد تلاميذ مطابقون</td></tr>'}</tbody>
@@ -1616,7 +1646,7 @@ function renderSpecial(){
     html += `<div class="card"><h3>معيدو ${LEVEL_LABEL[lvl]} (${reps.length})</h3>
       <div class="hint">سيلتحقون بأفواج ${LEVEL_LABEL[lvl]} الجديدة المذكورة في الجدول</div>
       ${reps.length ? `<table class="summary-table"><tr><th>الاسم</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الفوج الجديد</th></tr>
-        ${reps.map(s=>`<tr><td>${s.name}</td><td>${s.g==='M'?'ذكر':'أنثى'}</td><td>${s.dob}</td><td>فوج ${s.newSection}</td></tr>`).join('')}
+        ${reps.map(s=>`<tr><td>${esc(s.name)}</td><td>${s.g==='M'?'ذكر':'أنثى'}</td><td>${esc(s.dob)}</td><td>فوج ${esc(s.newSection)}</td></tr>`).join('')}
       </table>` : '<div style="color:var(--ink-soft); font-size:13px;">لا يوجد</div>'}</div>`;
   });
   const directed = RAW_DATA.current.filter(r=>r.dec==='V').map(r=>({ln:r.ln, fn:r.fn, g:r.g, dob:r.dob, sec:r.sec}));
@@ -1624,7 +1654,7 @@ function renderSpecial(){
   html += `<div class="card"><h3>الموجَّهون إلى مراكز التكوين المهني (${directed.length})</h3>
     <div class="hint">قرار نهائي من محضر مجلس القبول والتوجيه — يغادرون المؤسسة، لا يظهرون في قوائم العام القادم</div>
     ${directed.length ? `<table class="summary-table"><tr><th>الاسم</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الفوج الأصلي</th></tr>
-      ${directed.map(s=>`<tr><td>${s.ln} ${s.fn}</td><td>${s.g==='M'?'ذكر':'أنثى'}</td><td>${s.dob}</td><td>فوج ${s.sec}</td></tr>`).join('')}
+      ${directed.map(s=>`<tr><td>${esc(s.ln)} ${esc(s.fn)}</td><td>${s.g==='M'?'ذكر':'أنثى'}</td><td>${esc(s.dob)}</td><td>فوج ${esc(s.sec)}</td></tr>`).join('')}
     </table>` : '<div style="color:var(--ink-soft); font-size:13px;">لا يوجد</div>'}</div>`;
   html += `<div class="card"><h3>أرشيف إعلامي — الناجحون المتجهون إلى الثانوية (${leftSuccessCount})</h3>
     <div class="hint">يغادرون المؤسسة نهائيًا بعد النجاح في شهادة التعليم المتوسط</div></div>`;
@@ -1690,6 +1720,30 @@ function renderExport(){
     return;
   }
   if(genBtn) genBtn.disabled = false;
+  // institution preview + completeness check
+  const I = STATE.institution;
+  const rowsEl = document.getElementById('portalInstRows');
+  const warnEl = document.getElementById('portalInstWarn');
+  const missing = [];
+  if (!(I.school||'').trim())      missing.push('اسم المؤسسة');
+  if (!(I.directorate||'').trim()) missing.push('مديرية التربية');
+  if (!(I.year||'').trim())        missing.push('السنة الدراسية');
+  if (rowsEl){
+    const row = (lbl, val, req) => {
+      const ok = (val||'').trim();
+      return `<div style="display:flex; gap:8px;">
+        <span style="min-width:130px; color:var(--ink-soft);">${lbl}:</span>
+        <b style="color:${ok?'var(--heading)':'var(--red)'};">${ok?esc(val):(req?'— غير مُدخَل —':'—')}</b>
+      </div>`;
+    };
+    rowsEl.innerHTML =
+      row('الجمهورية', I.republic) +
+      row('الوزارة', I.ministry) +
+      row('مديرية التربية', I.directorate, true) +
+      row('اسم المؤسسة', I.school, true) +
+      row('السنة الدراسية', I.year, true);
+  }
+  if (warnEl) warnEl.style.display = missing.length ? 'flex' : 'none';
   const totalStudents = [1,2,3,4].reduce((s,lvl)=>{
     const sec = STATE.results[lvl]&&STATE.results[lvl].sections||{};
     return s + Object.values(sec).reduce((a,arr)=>a+arr.length,0);
@@ -2210,12 +2264,12 @@ function portalSearch(){
       const r = cd.record;
       const lvlTxt = cd.src==='new_arrival' ? 'وافد جديد' : LEVEL_LABEL[r.lvl];
       return `<div class="toggle-row" style="border-bottom:1px solid var(--line); padding:10px 0; cursor:pointer;"
-        onclick="portalShowCard('${cd.src}','${(r.id||r.rank)}')" style="cursor:pointer;">
+        onclick="portalShowCard('${esc(cd.src)}','${esc(r.id||r.rank)}')">
         <div style="flex:1;">
-          <b>${r.ln} ${r.fn}</b> · ${lvlTxt}
+          <b>${esc(r.ln)} ${esc(r.fn)}</b> · ${lvlTxt}
           ${cd.src==='current' ? `· فوج ${r.sec} · معدل ${r.avg}` : '· وافد جديد من الابتدائي'}
         </div>
-        <span style="color:var(--ink-soft); font-size:12px;">${r.dob}</span>
+        <span style="color:var(--ink-soft); font-size:12px;">${esc(r.dob)}</span>
       </div>`;
     }).join('');
     resultEl.innerHTML = `<div class="alert info">وُجد <b>${candidates.length}</b> تلميذ مطابق — اختر الشخص المقصود:</div>
@@ -2273,12 +2327,12 @@ function portalShowCard(src, idOrRank){
     <div class="sc-header">
       <div style="text-align:center;min-width:50px;"><span style="font-size:30px;">🇩🇿</span></div>
       <div class="sc-inst" style="text-align:center;flex:1;">
-        <div class="sc-inst-name">${inst.republic||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
-        <div class="sc-inst-sub">${inst.ministry||'وزارة التربية الوطنية'}</div>
-        ${inst.directorate?`<div class="sc-inst-sub">مديرية التربية لولاية ${inst.directorate}</div>`:''}
-        <div class="sc-inst-name" style="margin-top:4px;font-size:17px;">${inst.school||'المتوسطة'}</div>
+        <div class="sc-inst-name">${esc(inst.republic)||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
+        <div class="sc-inst-sub">${esc(inst.ministry)||'وزارة التربية الوطنية'}</div>
+        ${inst.directorate?`<div class="sc-inst-sub">مديرية التربية لولاية ${esc(inst.directorate)}</div>`:''}
+        <div class="sc-inst-name" style="margin-top:4px;font-size:17px;">${esc(inst.school)||'المتوسطة'}</div>
       </div>
-      <div class="sc-badge">${inst.year||'2026/2027'}</div>
+      <div class="sc-badge">${esc(inst.year)||'2026/2027'}</div>
     </div>
 
     <div class="sc-title">📋 بطاقة استعلامات التلميذ</div>
@@ -2286,10 +2340,10 @@ function portalShowCard(src, idOrRank){
     <div class="sc-top-row">
       <div class="sc-photo-area">👤</div>
       <div class="sc-top-fields">
-        <div class="sc-field"><label>اللقب</label><div class="val">${r.ln}</div></div>
-        <div class="sc-field"><label>الاسم</label><div class="val">${r.fn}</div></div>
+        <div class="sc-field"><label>اللقب</label><div class="val">${esc(r.ln)}</div></div>
+        <div class="sc-field"><label>الاسم</label><div class="val">${esc(r.fn)}</div></div>
         <div class="sc-field"><label>الجنس</label><div class="val">${r.g==='M'?'ذكر':'أنثى'}</div></div>
-        <div class="sc-field"><label>تاريخ الميلاد</label><div class="val">${r.dob}</div></div>
+        <div class="sc-field"><label>تاريخ الميلاد</label><div class="val">${esc(r.dob)}</div></div>
         <div class="sc-field full"><label>المستوى الدراسي الحالي</label>
           <div class="val">${src==='new_arrival'?'وافد جديد — السنة الأولى متوسط':LEVEL_LABEL[r.lvl]+' · فوج '+r.sec}</div></div>
       </div>
@@ -2360,7 +2414,7 @@ function portalShowCard(src, idOrRank){
         <div class="sc-section-head">📥 معلومات القبول والتوجيه</div>
         <div class="sc-fields">
           <div class="sc-field"><label>معدل القبول</label><div class="val highlight">${r.avg!=null?r.avg.toFixed(2):'—'}/10</div></div>
-          <div class="sc-field"><label>المؤسسة الأصلية</label><div class="val">${r.origin||'—'}</div></div>
+          <div class="sc-field"><label>المؤسسة الأصلية</label><div class="val">${esc(r.origin)||'—'}</div></div>
           <div class="sc-field full"><label>الوضع</label>
             <div style="margin-top:4px;"><span class="sc-status-chip new">وافد جديد — يلتحق بالسنة الأولى متوسط</span></div></div>
         </div>
@@ -2390,9 +2444,9 @@ function portalShowCard(src, idOrRank){
           <div class="sc-field full" style="margin-top:4px;">
             <label>نص التصريح</label>
             <div class="sc-decl">
-              أنا الممضي أسفله، ولي التلميذ(ة) <b>${r.ln} ${r.fn}</b> المتمدرس(ة) بـ${inst.school||'المؤسسة'}
+              أنا الممضي أسفله، ولي التلميذ(ة) <b>${esc(r.ln)} ${esc(r.fn)}</b> المتمدرس(ة) بـ${esc(inst.school)||'المؤسسة'}
               — ${src==='current'?LEVEL_LABEL[r.lvl]:'السنة الأولى متوسط'}${newSection?(' — فوج '+newSection):''} —
-              السنة الدراسية ${inst.year||'2026/2027'}، أصرّح بشرفي بأنني أسمح لابني/ابنتي بالمشاركة في جميع
+              السنة الدراسية ${esc(inst.year)||'2026/2027'}، أصرّح بشرفي بأنني أسمح لابني/ابنتي بالمشاركة في جميع
               التظاهرات الرياضية والثقافية التي تبرمجها المؤسسة داخلها وخارجها، وألتزم بالقانون الداخلي للمؤسسة.
             </div>
           </div>
@@ -2422,7 +2476,7 @@ function portalShowCard(src, idOrRank){
         <div class="sc-fields">
           <div class="sc-field full">
             <div class="sc-decl">
-              أنا الطبيب(ة) الممضي أسفله، أشهد بأن التلميذ(ة) <b>${r.ln} ${r.fn}</b>
+              أنا الطبيب(ة) الممضي أسفله، أشهد بأن التلميذ(ة) <b>${esc(r.ln)} ${esc(r.fn)}</b>
               لا يعاني من أي مرض أو عارض صحي يحول دون ممارسته للأنشطة الرياضية والثقافية
               داخل المؤسسة وخارجها.
             </div>
@@ -2434,9 +2488,9 @@ function portalShowCard(src, idOrRank){
     </div>
 
     <div class="sc-footer">
-      <span>رقم التعريف: ${r.id||('وافد-'+r.rank)}</span>
+      <span>رقم التعريف: ${esc(r.id||('وافد-'+r.rank))}</span>
       <span class="brand brand-credit">DONIA SMART CLASSE — DONIA LABS TECH</span>
-      <span class="brand brand-school" style="display:none;">${inst.school||''}</span>
+      <span class="brand brand-school" style="display:none;">${esc(inst.school)}</span>
       <span>طُبع بتاريخ: ${new Date().toLocaleDateString('ar-DZ')}</span>
     </div>
   </div>`;
@@ -2537,7 +2591,25 @@ function portalClear(){
    This file is uploaded to GitHub by the admin and accessed by students.
 ═══════════════════════════════════════════════════════════════════ */
 function generateStudentPortal(){
-  if (!STATE.results){ alert('نفّذ التوزيع أولًا.'); return; }
+  if (!STATE.results){ alert('نفّذ التوزيع أولًا من صفحة "الخريطة المدرسية".'); return; }
+
+  /* ── guard: don't publish a portal with placeholder institution info ── */
+  const I0 = STATE.institution;
+  const missing = [];
+  if (!(I0.school||'').trim())      missing.push('• اسم المؤسسة');
+  if (!(I0.directorate||'').trim()) missing.push('• مديرية التربية للولاية');
+  if (!(I0.year||'').trim())        missing.push('• السنة الدراسية');
+  if (missing.length){
+    const go = confirm(
+      '⚠️ معلومات المؤسسة ناقصة:\n\n' + missing.join('\n') +
+      '\n\nإن تابعت، ستظهر البوابة للتلاميذ باسم عام بدل اسم مؤسستك.\n\n' +
+      'اضغط "إلغاء" لإكمال البيانات أولًا من صفحة "معلومات المؤسسة"، أو "موافق" للمتابعة رغم ذلك.'
+    );
+    if (!go){
+      document.querySelector('[data-panel="institution"]').click();
+      return;
+    }
+  }
 
   /* ── 1. Flatten all distributed students into a lookup table ── */
   const lookup = {}; // key: "lastname|dob" → {name, dob, lvl, section, status, avg, origin, id}
@@ -2582,7 +2654,7 @@ function generateStudentPortal(){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>بوابة التلاميذ — ${inst.school||'المتوسطة'}</title>
+<title>بوابة التلاميذ — ${esc(inst.school)||'المتوسطة'}</title>
 ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=Tajawal:wght@400;500;700&display=swap');
@@ -2732,11 +2804,11 @@ ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
   <div class="hdr-top">
     ${logoSrc ? `<img class="hdr-logo" src="${logoSrc}" alt="شعار">` : '<span style="font-size:38px;">🏫</span>'}
     <div class="hdr-inst">
-      <div class="republic">${inst.republic||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
-      <div class="ministry">${inst.ministry||'وزارة التربية الوطنية'}${inst.directorate?' — مديرية التربية لولاية '+inst.directorate:''}</div>
-      <div class="school-name">${inst.school||'المتوسطة'}</div>
+      <div class="republic">${esc(inst.republic)||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
+      <div class="ministry">${esc(inst.ministry)||'وزارة التربية الوطنية'}${inst.directorate?' — مديرية التربية لولاية '+esc(inst.directorate):''}</div>
+      <div class="school-name">${esc(inst.school)||'المتوسطة'}</div>
     </div>
-    <div class="hdr-badge">${inst.year||'2026/2027'}</div>
+    <div class="hdr-badge">${esc(inst.year)||'2026/2027'}</div>
   </div>
   <div class="hdr-tagline">🎓 البوابة الإلكترونية للتلاميذ — اطّلع على فوجك وطبع استمارتك</div>
 </header>
@@ -2763,8 +2835,8 @@ ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
 <div class="student-card-wrap" id="cardWrap" style="display:none;"></div>
 
 <footer class="site-footer no-print">
-  نُشرت هذه البوابة بواسطة <b>${inst.school||'المؤسسة التعليمية'}</b> —
-  السنة الدراسية ${inst.year||'2026/2027'} — تاريخ النشر: ${publishedAt}<br>
+  نُشرت هذه البوابة بواسطة <b>${esc(inst.school)||'المؤسسة التعليمية'}</b> —
+  السنة الدراسية ${esc(inst.year)||'2026/2027'} — تاريخ إصدار هذه النسخة: ${esc(publishedAt)}<br>
   مدعومة بـ <a href="https://donialabstech.online" target="_blank">DONIA LABS TECH</a> — DONIA SMART CLASSE
 </footer>
 
@@ -2778,6 +2850,10 @@ const LOGO_SRC = ${JSON.stringify(logoSrc)};
 const norm = s => (s||'').replace(/[\\u064B-\\u065F\\u0670]/g,'')
                           .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
                           .toLowerCase().trim();
+/* escape values before injecting into markup */
+const esc = v => (v===null||v===undefined) ? '' : String(v)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 function doSearch(){
   const nameQ = norm(document.getElementById('sName').value);
@@ -2806,10 +2882,10 @@ function doSearch(){
 
   if (matches.length > 1){
     const listHtml = matches.slice(0,8).map(s=>\`
-      <div class="result-list-item" onclick="showCard('\${s.uid}')">
+      <div class="result-list-item" onclick="showCard('\${esc(s.uid)}')">
         <div>
-          <div class="rli-name">\${s.name}</div>
-          <div class="rli-meta">\${LEVEL_LBL[s.lvl]} · فوج \${s.section} · \${s.dob}</div>
+          <div class="rli-name">\${esc(s.name)}</div>
+          <div class="rli-meta">\${esc(LEVEL_LBL[s.lvl])} · فوج \${esc(s.section)} · \${esc(s.dob)}</div>
         </div>
         <span class="rli-arrow">›</span>
       </div>\`).join('');
@@ -2837,19 +2913,19 @@ function showCard(uid){
     <div class="scard-header">
       \${LOGO_SRC ? '<img class="sh-logo" src="'+LOGO_SRC+'" alt="">' : '<span style="font-size:36px;">🇩🇿</span>'}
       <div class="sh-inst">
-        <div class="sh-republic">\${INST.republic||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
-        <div class="sh-name">\${INST.school||'المتوسطة'}</div>
-        \${INST.directorate?'<div style="font-size:11px;color:#C9BE9E;">مديرية التربية لولاية '+INST.directorate+'</div>':''}
+        <div class="sh-republic">\${esc(INST.republic)||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
+        <div class="sh-name">\${esc(INST.school)||'المتوسطة'}</div>
+        \${INST.directorate?'<div style="font-size:11px;color:#C9BE9E;">مديرية التربية لولاية '+esc(INST.directorate)+'</div>':''}
       </div>
-      <div class="sh-year">\${INST.year||'2026/2027'}</div>
+      <div class="sh-year">\${esc(INST.year)||'2026/2027'}</div>
     </div>
     <div class="scard-title">📋 بطاقة استعلامات التلميذ</div>
 
     <div class="fawj-banner">
       <div class="fb-label">✅ تم توجيهك إلى</div>
-      <div class="fb-lvl">\${LEVEL_LBL[s.lvl]}</div>
-      <div class="fb-num">\${s.section}</div>
-      <div class="fb-fawj">الفوج \${s.section}</div>
+      <div class="fb-lvl">\${esc(LEVEL_LBL[s.lvl])}</div>
+      <div class="fb-num">\${esc(s.section)}</div>
+      <div class="fb-fawj">الفوج \${esc(s.section)}</div>
       <span class="status-chip \${statusCls[s.status]||'promoted'}">\${statusLabel[s.status]||'—'}</span>
       \${s.b10 ? '<span class="status-chip new" style="margin-right:8px;">★ مولود 2010 — حق الإعادة</span>' : ''}
     </div>
@@ -2858,13 +2934,13 @@ function showCard(uid){
       <div class="info-section">
         <div class="info-section-head">👤 معلومات التلميذ</div>
         <div class="info-fields">
-          <div class="info-field"><label>اللقب</label><div class="val">\${s.name.split(' ').slice(0,2).join(' ')}</div></div>
-          <div class="info-field"><label>الاسم</label><div class="val">\${s.name.split(' ').slice(2).join(' ')||s.name}</div></div>
-          <div class="info-field"><label>تاريخ الميلاد</label><div class="val">\${s.dob}</div></div>
-          <div class="info-field"><label>المستوى الدراسي</label><div class="val">\${LEVEL_LBL[s.lvl]}</div></div>
-          <div class="info-field"><label>الفوج الجديد</label><div class="val big">فوج \${s.section}</div></div>
+          <div class="info-field"><label>اللقب</label><div class="val">\${esc(s.name.split(' ').slice(0,2).join(' '))}</div></div>
+          <div class="info-field"><label>الاسم</label><div class="val">\${esc(s.name.split(' ').slice(2).join(' ')||s.name)}</div></div>
+          <div class="info-field"><label>تاريخ الميلاد</label><div class="val">\${esc(s.dob)}</div></div>
+          <div class="info-field"><label>المستوى الدراسي</label><div class="val">\${esc(LEVEL_LBL[s.lvl])}</div></div>
+          <div class="info-field"><label>الفوج الجديد</label><div class="val big">فوج \${esc(s.section)}</div></div>
           <div class="info-field"><label>المعدل</label><div class="val big">\${avgDisplay}</div></div>
-          \${s.origin ? '<div class="info-field full"><label>الابتدائية الأصلية</label><div class="val">'+s.origin+'</div></div>' : ''}
+          \${s.origin ? '<div class="info-field full"><label>الابتدائية الأصلية</label><div class="val">'+esc(s.origin)+'</div></div>' : ''}
         </div>
       </div>
 
@@ -2917,9 +2993,9 @@ function showCard(uid){
           <div class="info-field"><label>الصادرة عن دائرة</label><input class="p-input"></div>
           <div class="info-field full">
             <div class="decl-text">
-              أنا الممضي أسفله، ولي التلميذ(ة) <b>\${s.name}</b> المتمدرس(ة) في
-              \${INST.school||'المؤسسة'} — \${LEVEL_LBL[s.lvl]} — فوج \${s.section} —
-              السنة الدراسية \${INST.year||'2026/2027'}، أصرح بأنه يسمح لابني/ابنتي بالمشاركة
+              أنا الممضي أسفله، ولي التلميذ(ة) <b>\${esc(s.name)}</b> المتمدرس(ة) في
+              \${esc(INST.school)||'المؤسسة'} — \${esc(LEVEL_LBL[s.lvl])} — فوج \${esc(s.section)} —
+              السنة الدراسية \${esc(INST.year)||'2026/2027'}، أصرح بأنه يسمح لابني/ابنتي بالمشاركة
               في جميع التظاهرات الرياضية والثقافية التي تبرمجها المؤسسة طيلة الموسم الدراسي
               داخل وخارج المؤسسة، وأن التزم بالقانون الداخلي للمؤسسة.
             </div>
@@ -2946,7 +3022,7 @@ function showCard(uid){
         <div class="info-fields">
           <div class="info-field full">
             <div class="decl-text">
-              أنا الطبيب الممضي أسفله، أشهد أن التلميذ(ة) <b>\${s.name}</b>
+              أنا الطبيب الممضي أسفله، أشهد أن التلميذ(ة) <b>\${esc(s.name)}</b>
               لا يعاني من أي مرض أو عارض يحول دون ممارسته للأنشطة الرياضية والثقافية
               داخل المؤسسة وخارجها.
             </div>
@@ -2958,10 +3034,10 @@ function showCard(uid){
     </div>
 
     <div class="scard-footer">
-      <span>رقم: \${s.uid}</span>
+      <span>رقم: \${esc(s.uid)}</span>
       <span class="brand brand-credit">DONIA SMART CLASSE</span>
-      <span class="brand brand-school" style="display:none;">\${INST.school||''}</span>
-      <span>\${INST.school||''} — \${INST.year||''}</span>
+      <span class="brand brand-school" style="display:none;">\${esc(INST.school)}</span>
+      <span>\${esc(INST.school)} — \${esc(INST.year)}</span>
     </div>
   </div>\`;
 
@@ -3045,7 +3121,13 @@ function toggleBrand(hide){
   /* ── 5. Show success info ── */
   const msg = document.getElementById('portalDownloadedMsg');
   const urlEl = document.getElementById('portalShareUrl');
+  const stampEl = document.getElementById('portalStamp');
   if (msg){ msg.style.display = 'block'; }
+  if (stampEl){
+    const nStu = students.length;
+    stampEl.innerHTML = `🕒 وُلِّدت الآن (${new Date().toLocaleString('ar-DZ')}) — تحتوي
+      <b>${nStu}</b> تلميذ — باسم <b>${esc(inst.school)||'(بدون اسم مؤسسة)'}</b>`;
+  }
   if (urlEl){
     const repoGuess = window.location.hostname.includes('github.io')
       ? window.location.href.replace('index.html','').replace(/\/$/, '') + '/' + a.download
@@ -3140,7 +3222,9 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 ['inst_republic','inst_ministry','inst_directorate','inst_school','inst_year'].forEach(id=>{
   document.getElementById(id).addEventListener('input', e=>{
     const map = {inst_republic:'republic', inst_ministry:'ministry', inst_directorate:'directorate', inst_school:'school', inst_year:'year'};
-    STATE.institution[map[id]] = e.target.value; persist(); renderOverview();
+    STATE.institution[map[id]] = e.target.value; persist();
+    renderOverview();
+    renderExport();   // keep the portal preview / warning in sync
     document.getElementById('sidebarSchoolName').textContent = (STATE.institution.school ? STATE.institution.school + ' — ' : '') + (STATE.institution.year || '2026/2027');
   });
 });
