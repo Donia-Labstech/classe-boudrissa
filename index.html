@@ -1661,50 +1661,195 @@ function renderSpecial(){
   el.innerHTML = html;
 }
 
-function letterheadRows(title){
-  return [ [STATE.institution.republic], [STATE.institution.ministry],
-    [STATE.institution.directorate ? ('مديرية التربية لولاية ' + STATE.institution.directorate) : ''],
-    [STATE.institution.school || ''], [title], [] ];
+/* ═══════════════════════════════════════════════════════════════
+   EXCEL EXPORT — official Algerian ministry layout
+   • ورقة لكل قسم: قوائم تلاميذ قسم (بالترويسة والتعداد والإمضاءات)
+   • ورقة تعداد التلاميذ: جدد/معيدون لكل قسم مع المجاميع
+═══════════════════════════════════════════════════════════════ */
+
+/* اسم القسم بالصيغة الرسمية: "1 متوسط3" */
+function officialClassName(lvl, sec){ return lvl + ' متوسط' + sec; }
+
+/* ترويسة رسمية على ثلاثة أعمدة (يمين / وسط / يسار) */
+function officialHeader(cols, title){
+  const I = STATE.institution;
+  const pad = n => new Array(Math.max(0,n)).fill('');
+  const right = 'مديرية التربية لولاية ' + (I.directorate||'');
+  const mid   = I.republic || 'الجمهورية الجزائرية الديمقراطية الشعبية';
+  const rows = [];
+  // السطر 1: المديرية (يمين) — الجمهورية (وسط) — الموسم (يسار)
+  rows.push([right, ...pad(cols-3), mid, 'الموسم الدراسي : ' + (I.year||'')]);
+  // السطر 2: المؤسسة (يمين) — الوزارة (وسط)
+  rows.push([(I.school||''), ...pad(cols-3), (I.ministry||'وزارة التربية الوطنية'), '']);
+  rows.push(pad(cols));
+  // العنوان
+  rows.push([title, ...pad(cols-1)]);
+  rows.push(pad(cols));
+  return rows;
 }
-function buildSheetForSection(lvlLabel, sectionNum, students){
-  const header = letterheadRows(`القائمة الاسمية للتلاميذ — ${lvlLabel} — فوج ${sectionNum} — السنة الدراسية ${STATE.institution.year}`);
-  header.push(['الرقم','اللقب والاسم','الجنس','تاريخ الميلاد','الحالة','الأصل / الفوج السابق','آخر معدل معروف']);
-  const sorted = students.slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
-  sorted.forEach((s,i)=> header.push([i+1, s.name, s.g==='M'?'ذكر':'أنثى', s.dob,
-    s.status==='NEW'?'وافد جديد':(s.status==='PROMOTED'?'منتقل':'معيد'),
-    s.status==='NEW' ? (s.origin||'') : ('فوج '+s.originSection),
-    s.avg!=null ? s.avg.toFixed(2) : '']));
-  const ws = XLSX.utils.aoa_to_sheet(header);
-  ws['!cols'] = [{wch:6},{wch:28},{wch:8},{wch:13},{wch:11},{wch:24},{wch:10}];
+
+/* إحصاء مجموعة تلاميذ: جدد/معيدون × ذكور/إناث */
+function tally(list){
+  const isRep = s => s.status === 'REPEAT';
+  const isM   = s => s.g === 'M';
+  const newM  = list.filter(s=>!isRep(s) &&  isM(s)).length;
+  const newF  = list.filter(s=>!isRep(s) && !isM(s)).length;
+  const repM  = list.filter(s=> isRep(s) &&  isM(s)).length;
+  const repF  = list.filter(s=> isRep(s) && !isM(s)).length;
+  return {
+    newM, newF, newT:newM+newF,
+    repM, repF, repT:repM+repF,
+    totM:newM+repM, totF:newF+repF, total:list.length
+  };
+}
+
+/* ── ورقة قسم واحد بالتنسيق الرسمي ── */
+function buildOfficialClassSheet(lvl, sec, students){
+  const COLS  = 8;
+  const title = 'قوائم تلاميذ قسم:  ' + officialClassName(lvl, sec);
+  const rows  = officialHeader(COLS, title);
+
+  rows.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','معيد','الجنس','الصفة','ملاحظات']);
+
+  const sorted = students.slice().sort((a,b)=> a.name.localeCompare(b.name,'ar'));
+  sorted.forEach((s,i)=>{
+    const ex  = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
+    const idn = s.id ? String(s.id).slice(-4) : '';
+    rows.push([
+      i+1,
+      idn,
+      s.name,
+      s.dob,
+      s.status==='REPEAT' ? 'نعم' : 'لا',
+      s.g==='M' ? 'ذكر' : 'أنثى',
+      ex.status || '',        // الصفة: داخلي / نصف داخلي / خارجي (تُملأ يدويًا)
+      ex.notes  || ''
+    ]);
+  });
+
+  // ── جدول التعداد أسفل القائمة ──
+  const t = tally(students);
+  rows.push([]);
+  rows.push(['', '', '', 'المجموع', 'خارجي', 'ن داخلي', 'داخلي', 'معيدون', 'جدد', '']);
+  rows.push(['', '', 'الذكور',  t.totM, '', '', '', t.repM, t.newM, '']);
+  rows.push(['', '', 'الإناث',  t.totF, '', '', '', t.repF, t.newF, '']);
+  rows.push(['', '', 'المجموع', t.total,'', '', '', t.repT, t.newT, '']);
+  rows.push([]);
+  const today = new Date().toISOString().slice(0,10);
+  rows.push([(STATE.institution.directorate||'') + ' في: ' + today]);
+  rows.push([]);
+  rows.push(['إمضاء مستشار التربية', '', '', 'إمضاء الناظر', '', '', 'إمضاء المديرية', '']);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:8},{wch:13},{wch:16}];
   return ws;
 }
+
+/* ── ورقة "تعداد التلاميذ" لكل المستويات ── */
+function buildCensusSheet(){
+  const I = STATE.institution;
+  const COLS = 10;
+  const rows = officialHeader(COLS, 'تعداد التلاميذ لموسم:  ' + (I.year||''));
+
+  rows.push(['القسم','ذكور','إناث','مجموع','ذكور','إناث','مجموع','ذكور','إناث','المجموع الكلي']);
+  rows.push(['',      'التلاميذ المعيدون','','','التلاميذ الجدد','','','المجموع','','']);
+
+  const G = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
+
+  [1,2,3,4].forEach(lvl=>{
+    const secObj = STATE.results[lvl] && STATE.results[lvl].sections;
+    if (!secObj) return;
+    const keys = Object.keys(secObj).sort((a,b)=>Number(a)-Number(b));
+    if (!keys.length) return;
+
+    const L = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
+    keys.forEach(k=>{
+      const t = tally(secObj[k]);
+      rows.push([
+        officialClassName(lvl,k),
+        t.repM, t.repF, t.repT,
+        t.newM, t.newF, t.newT,
+        t.totM, t.totF, t.total
+      ]);
+      Object.keys(L).forEach(p => L[p] += t[p]);
+    });
+    // مجموع المستوى
+    rows.push([lvl + ' متوسط', L.repM, L.repF, L.repT, L.newM, L.newF, L.newT, L.totM, L.totF, L.total]);
+    Object.keys(G).forEach(p => G[p] += L[p]);
+  });
+
+  rows.push(['المجمـــوع', G.repM, G.repF, G.repT, G.newM, G.newF, G.newT, G.totM, G.totF, G.total]);
+  rows.push([]);
+  rows.push([(I.directorate||'') + ' في: ' + new Date().toISOString().slice(0,10)]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:16},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:9},{wch:8},{wch:8},{wch:13}];
+  return ws;
+}
+
+/* ── تصدير مستوى كامل ── */
 function exportLevel(lvl){
   if (!STATE.results) return;
   const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
   const secObj = STATE.results[lvl].sections;
   const keys = Object.keys(secObj).sort((a,b)=>Number(a)-Number(b));
-  keys.forEach(k=>{ XLSX.utils.book_append_sheet(wb, buildSheetForSection(LEVEL_LABEL[lvl], k, secObj[k]), 'فوج '+k); });
 
-  let reps = [];
+  // ورقة لكل قسم
+  keys.forEach(k=>{
+    XLSX.utils.book_append_sheet(wb, buildOfficialClassSheet(lvl, k, secObj[k]), officialClassName(lvl,k));
+  });
+
+  // ورقة المعيدين
+  const reps = [];
   keys.forEach(k=> secObj[k].forEach(s=>{ if (s.status==='REPEAT') reps.push({...s, newSection:k}); }));
-  const repHeader = letterheadRows('قائمة المعيدين — ' + LEVEL_LABEL[lvl]);
-  repHeader.push(['اللقب والاسم','الجنس','تاريخ الميلاد','الفوج الجديد']);
-  reps.forEach(s=> repHeader.push([s.name, s.g==='M'?'ذكر':'أنثى', s.dob, 'فوج '+s.newSection]));
-  const wsRep = XLSX.utils.aoa_to_sheet(repHeader);
-  wsRep['!cols'] = [{wch:28},{wch:8},{wch:13},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsRep, 'المعيدون');
+  const rHead = officialHeader(6, 'قائمة التلاميذ المعيدين — ' + LEVEL_LABEL[lvl]);
+  rHead.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الجديد']);
+  reps.sort((a,b)=>Number(a.newSection)-Number(b.newSection))
+      .forEach((s,i)=> rHead.push([i+1, s.id?String(s.id).slice(-4):'', s.name, s.dob,
+                                   s.g==='M'?'ذكر':'أنثى', officialClassName(lvl,s.newSection)]));
+  const wsR = XLSX.utils.aoa_to_sheet(rHead);
+  wsR['!cols']=[{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsR, 'المعيدون');
 
+  // ورقة الموجَّهين (الرابعة فقط)
   if (lvl===4){
-    const directed = RAW_DATA.current.filter(r=>r.dec==='V');
-    const dirHeader = letterheadRows('قائمة الموجَّهين إلى مراكز التكوين المهني');
-    dirHeader.push(['اللقب والاسم','الجنس','تاريخ الميلاد','الفوج الأصلي']);
-    directed.forEach(s=> dirHeader.push([s.ln+' '+s.fn, s.g==='M'?'ذكر':'أنثى', s.dob, 'فوج '+s.sec]));
-    const wsDir = XLSX.utils.aoa_to_sheet(dirHeader);
-    wsDir['!cols'] = [{wch:28},{wch:8},{wch:13},{wch:10}];
-    XLSX.utils.book_append_sheet(wb, wsDir, 'الموجَّهون');
+    const dir = RAW_DATA.current.filter(r=>r.dec==='V');
+    const dHead = officialHeader(6, 'قائمة التلاميذ الموجَّهين إلى مراكز التكوين المهني');
+    dHead.push(['الرقم','رقم التعريف','اللقب و الاسم','تاريخ الميلاد','الجنس','القسم الأصلي']);
+    dir.forEach((s,i)=> dHead.push([i+1, String(s.id).slice(-4), s.ln+' '+s.fn, s.dob,
+                                    s.g==='M'?'ذكر':'أنثى', officialClassName(4,s.sec)]));
+    const wsD = XLSX.utils.aoa_to_sheet(dHead);
+    wsD['!cols']=[{wch:6},{wch:11},{wch:30},{wch:14},{wch:8},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsD, 'الموجهون');
   }
-  const schoolTag = (STATE.institution.school || 'قوائم').replace(/[\\\/:*?"<>|]/g,'');
-  XLSX.writeFile(wb, `${schoolTag}_${LEVEL_LABEL[lvl]}_${(STATE.institution.year||'2026-2027').replace('/','-')}.xlsx`);
+
+  const tag = (STATE.institution.school || 'قوائم').replace(/[\\\/:*?"<>|]/g,'');
+  XLSX.writeFile(wb, `${tag}_${LEVEL_LABEL[lvl]}_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
+}
+
+/* ── تصدير ورقة التعداد وحدها ── */
+function exportCensus(){
+  if (!STATE.results) return;
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
+  XLSX.utils.book_append_sheet(wb, buildCensusSheet(), 'تعداد التلاميذ');
+  const tag = (STATE.institution.school || 'تعداد').replace(/[\\\/:*?"<>|]/g,'');
+  XLSX.writeFile(wb, `${tag}_تعداد-التلاميذ_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
+}
+
+/* ── تصدير كل شيء في ملف واحد ── */
+function exportAll(){
+  if (!STATE.results) return;
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{RTL:true}] };
+  XLSX.utils.book_append_sheet(wb, buildCensusSheet(), 'تعداد التلاميذ');
+  [1,2,3,4].forEach(lvl=>{
+    const secObj = STATE.results[lvl] && STATE.results[lvl].sections;
+    if (!secObj) return;
+    Object.keys(secObj).sort((a,b)=>Number(a)-Number(b)).forEach(k=>{
+      XLSX.utils.book_append_sheet(wb, buildOfficialClassSheet(lvl,k,secObj[k]), officialClassName(lvl,k));
+    });
+  });
+  const tag = (STATE.institution.school || 'قوائم').replace(/[\\\/:*?"<>|]/g,'');
+  XLSX.writeFile(wb, `${tag}_كل-القوائم_${(STATE.institution.year||'').replace('/','-')}.xlsx`);
 }
 function renderExport(){
   const card = document.getElementById('export-card');
@@ -1712,7 +1857,7 @@ function renderExport(){
   const genBtn = document.getElementById('generatePortalBtn');
   const pubStatus = document.getElementById('portalPublishStatus');
   const schoolName = (STATE.institution.school||'').replace(/[\\/:*?"<>|]/g,'').trim() || 'بوابة-التلاميذ';
-  document.getElementById('portalFilename').textContent = schoolName + '-student-portal.html';
+  document.getElementById('portalFilename').textContent = 'student-portal.html';
   if (!STATE.results){
     card.innerHTML = `<div class="empty-state"><div class="big-emoji">📦</div>نفّذ التوزيع أولًا لتفعيل التصدير</div>`;
     if(genBtn) genBtn.disabled = true;
@@ -1749,14 +1894,45 @@ function renderExport(){
     return s + Object.values(sec).reduce((a,arr)=>a+arr.length,0);
   },0);
   if(pubStatus) pubStatus.innerHTML = `✓ التوزيع مكتمل — <b>${totalStudents}</b> تلميذ موزَّعون — البوابة جاهزة للنشر.`;
-  card.innerHTML = [1,2,3,4].map(lvl=>{
-    const secObj = STATE.results[lvl].sections;
-    const total = Object.values(secObj).reduce((a,arr)=>a+arr.length,0);
-    return `<div class="toggle-row" style="border-bottom:1px solid var(--line); padding:14px 0;">
-      <div style="flex:1;"><div class="lbl-main">${LEVEL_LABEL[lvl]} الجديدة</div><div class="lbl-sub">${Object.keys(secObj).length} فوج — ${total} تلميذ</div></div>
-      <button class="btn gold small" data-export-lvl="${lvl}">⬇ تصدير Excel</button></div>`;
-  }).join('');
+  // إجمالي عام
+  let gAll=0, gNew=0, gRep=0;
+  [1,2,3,4].forEach(lvl=>{
+    const so = STATE.results[lvl] && STATE.results[lvl].sections; if(!so) return;
+    Object.values(so).forEach(arr=>arr.forEach(s=>{
+      gAll++; if (s.status==='REPEAT') gRep++; else gNew++;
+    }));
+  });
+
+  card.innerHTML = `
+    <div style="border:1.5px solid var(--gold); border-radius:9px; padding:14px 16px; margin-bottom:16px; background:linear-gradient(180deg,var(--backup-bg-top),var(--paper-2));">
+      <div style="font-family:'El Messiri',sans-serif; font-weight:700; font-size:14.5px; color:var(--heading); margin-bottom:4px;">📊 تعداد التلاميذ للموسم الجديد</div>
+      <div class="hint" style="margin-bottom:10px;">جدول رسمي يفصّل <b>التلاميذ الجدد</b> و<b>المعيدين</b> (ذكور/إناث) لكل قسم، مع مجاميع كل مستوى والمجموع العام</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px; font-size:12.5px;">
+        <span class="g-chip mf">الإجمالي: <b>${gAll}</b></span>
+        <span class="g-chip m">جدد: <b>${gNew}</b></span>
+        <span class="g-chip f">معيدون: <b>${gRep}</b></span>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn gold" id="exportCensusBtn">📊 تصدير ورقة التعداد</button>
+        <button class="btn primary" id="exportAllBtn">📦 تصدير كل القوائم + التعداد (ملف واحد)</button>
+      </div>
+    </div>` +
+    [1,2,3,4].map(lvl=>{
+      const secObj = STATE.results[lvl].sections;
+      const arrs = Object.values(secObj);
+      const total = arrs.reduce((a,x)=>a+x.length,0);
+      const rep   = arrs.reduce((a,x)=>a+x.filter(s=>s.status==='REPEAT').length,0);
+      return `<div class="toggle-row" style="border-bottom:1px solid var(--line); padding:14px 0;">
+        <div style="flex:1;">
+          <div class="lbl-main">${LEVEL_LABEL[lvl]} الجديدة</div>
+          <div class="lbl-sub">${Object.keys(secObj).length} قسم — ${total} تلميذ (${total-rep} جديد · ${rep} معيد)</div>
+        </div>
+        <button class="btn gold small" data-export-lvl="${lvl}">⬇ تصدير Excel</button></div>`;
+    }).join('');
+
   card.querySelectorAll('[data-export-lvl]').forEach(btn=> btn.addEventListener('click', ()=> exportLevel(Number(btn.dataset.exportLvl))));
+  const ecb = document.getElementById('exportCensusBtn'); if (ecb) ecb.addEventListener('click', exportCensus);
+  const eab = document.getElementById('exportAllBtn');    if (eab) eab.addEventListener('click', exportAll);
 }
 
 /* ---------- IMPORT ENGINE ---------- */
@@ -3112,9 +3288,8 @@ function toggleBrand(hide){
   const blob = new Blob([portalHtml], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  const schoolSlug = (inst.school||'school').replace(/[^a-zA-Z0-9\u0600-\u06FF]/g,'-');
   a.href = url;
-  a.download = schoolSlug + '-student-portal.html';
+  a.download = 'student-portal.html';   // اسم ثابت وبسيط — سهل الرفع والمشاركة
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1500);
 
