@@ -297,6 +297,85 @@ if (typeof XLSX === 'undefined') {
   }
   .portal-not-found .emoji{font-size:32px; display:block; margin-bottom:8px;}
   
+
+  /* ═══════════ PDF / PRINT VIEW ═══════════ */
+  #printRoot{ display:none; }
+  body.printing #printRoot{ display:block; }
+
+  .pdf-page{
+    background:#fff; color:#1E2A22; font-family:'Tajawal',sans-serif;
+    padding:8mm 6mm; box-sizing:border-box;
+  }
+  .pdf-page + .pdf-page{ page-break-before:always; }
+
+  /* الدمغة */
+  .pdf-lh{ border-top:2.5px solid #B8862E; border-bottom:2.5px solid #B8862E;
+    padding:7px 10px; margin-bottom:9px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .pdf-lh .lh-r{ text-align:right; line-height:1.65; }
+  .pdf-lh .lh-l{ text-align:left; font-size:11.5px; font-weight:700; color:#1F3A24; white-space:nowrap; }
+  .pdf-lh .lh-rep{ font-size:11.5px; font-weight:700; color:#1F3A24; }
+  .pdf-lh .lh-min{ font-size:11px; color:#3d5142; }
+  .pdf-lh .lh-dir{ font-size:11.5px; font-weight:700; color:#1F3A24; }
+  .pdf-lh .lh-school{ font-size:14px; font-weight:700; color:#B8862E; font-family:'El Messiri',sans-serif; }
+
+  /* شريط العنوان */
+  .pdf-bar{ background:#1F3A24; color:#fff; padding:8px 14px; border-radius:5px;
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .pdf-bar .b-title{ font-family:'El Messiri',sans-serif; font-size:15px; font-weight:700; }
+  .pdf-bar .b-meta{ font-size:11.5px; color:#D9CFA8; }
+
+  /* الجدول */
+  table.pdf-tb{ width:100%; border-collapse:collapse; font-size:10.5px; }
+  table.pdf-tb thead{ display:table-header-group; }
+  table.pdf-tb tr{ page-break-inside:avoid; }
+  table.pdf-tb th{ background:#F1EEE3; color:#44514A; font-weight:700; font-size:10px;
+    padding:6px 4px; border:1px solid #C9C2AE; border-bottom:2px solid #1F3A24; text-align:center; }
+  table.pdf-tb td{ padding:4.5px 4px; border:1px solid #DED8C6; text-align:center; vertical-align:middle; }
+  table.pdf-tb tbody tr:nth-child(even) td{ background:#FAF8F0; }
+  table.pdf-tb td.c-name{ text-align:right; font-weight:700; font-size:11px; }
+  table.pdf-tb td.c-origin{ text-align:right; font-size:9.5px; color:#7A867C; }
+  table.pdf-tb td.c-blank{ min-width:60px; }
+  .pdf-badge{ display:inline-block; padding:1.5px 7px; border-radius:9px; font-size:9.5px; font-weight:700; white-space:nowrap; }
+  .pdf-badge.rep{ background:#F1DEDA; color:#9C3D32; }
+  .pdf-badge.new{ background:#E8D9B5; color:#7A560F; }
+  .pdf-badge.pro{ background:#DCE6E0; color:#33524A; }
+  .avg-ok{ color:#2F5233; font-weight:700; }
+  .avg-no{ color:#9C3D32; font-weight:700; }
+
+  /* التعداد أسفل القائمة */
+  .pdf-tally{ margin-top:9px; page-break-inside:avoid; }
+  table.pdf-sum{ border-collapse:collapse; font-size:10.5px; margin-right:auto; }
+  table.pdf-sum th{ background:#2F5233; color:#fff; padding:5px 11px; border:1px solid #1F3A24; font-size:10px; }
+  table.pdf-sum td{ padding:5px 11px; border:1px solid #C9C2AE; text-align:center; background:#F4F2EA; }
+  table.pdf-sum tr:last-child td{ background:#F3E9D2; font-weight:700; }
+  table.pdf-sum td.lbl{ background:#EFEFEF; font-weight:700; }
+
+  /* الإمضاءات */
+  .pdf-sign{ display:flex; justify-content:space-between; margin-top:16px; page-break-inside:avoid; }
+  .pdf-sign div{ text-align:center; font-size:11px; font-weight:700; color:#1F3A24; width:31%; }
+  .pdf-sign div span{ display:block; margin-top:34px; border-top:1px dotted #999; }
+  .pdf-date{ text-align:left; font-size:10.5px; color:#3d5142; margin-top:10px; font-style:italic; }
+
+  /* جدول التعداد العام */
+  table.pdf-census{ width:100%; border-collapse:collapse; font-size:10.5px; }
+  table.pdf-census th{ background:#1F3A24; color:#fff; padding:6px 4px; border:1px solid #16301b;
+    text-align:center; font-size:10px; font-weight:700; }
+  table.pdf-census th.grp{ background:#2F5233; font-size:11px; }
+  table.pdf-census td{ padding:5px 4px; border:1px solid #DED8C6; text-align:center; }
+  table.pdf-census td.cls{ text-align:right; font-weight:700; }
+  table.pdf-census tr.sub td{ background:#DCE6E0; font-weight:700; color:#1F3A24; border-color:#9db3a4; }
+  table.pdf-census tr.tot td{ background:#F3E9D2; font-weight:700; font-size:11.5px; color:#1F3A24; border:1.5px solid #B8862E; }
+  table.pdf-census tbody tr:nth-child(even):not(.sub):not(.tot) td{ background:#FAF8F0; }
+
+  @page{ size:A4 portrait; margin:9mm 7mm; }
+  @media print{
+    body.printing .shell{ display:none !important; }
+    body.printing #printRoot{ display:block !important; }
+    body.printing{ background:#fff !important; }
+    .pdf-page{ padding:0; }
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  }
+
   /* ═══ PER-LEVEL OPTIONS MATRIX ═══ */
   .opt-matrix{border-collapse:collapse; width:100%; min-width:420px; font-size:12.5px;}
   .opt-matrix th{padding:8px 6px; font-size:11px; font-weight:700; color:var(--ink-soft);
@@ -719,6 +798,9 @@ if (typeof XLSX === 'undefined') {
 
   </main>
 </div>
+
+<!-- ════ حاوية الطباعة / PDF ════ -->
+<div id="printRoot" aria-hidden="true"></div>
 
 <script>
 /* ─────────────────────────────────────────────────────────────
@@ -1667,6 +1749,191 @@ function renderSpecial(){
   el.innerHTML = html;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   PDF EXPORT — عبر نافذة طباعة مصمَّمة (دعم عربي كامل RTL)
+═══════════════════════════════════════════════════════════════ */
+
+/* دمغة رسمية لكل صفحة */
+function pdfLetterhead(){
+  const I = STATE.institution;
+  return `<div class="pdf-lh">
+    <div class="lh-r">
+      <div class="lh-rep">${esc(I.republic)||'الجمهورية الجزائرية الديمقراطية الشعبية'}</div>
+      <div class="lh-min">${esc(I.ministry)||'وزارة التربية الوطنية'}</div>
+      <div class="lh-dir">مديرية التربية لولاية ${esc(I.directorate)||'—'}</div>
+      <div class="lh-school">${esc(I.school)||'المؤسسة'}</div>
+    </div>
+    <div class="lh-l">الموسم الدراسي: ${esc(I.year)||'—'}</div>
+  </div>`;
+}
+
+/* صفحة قسم واحد */
+function pdfClassPage(lvl, sec, students){
+  const t = tally(students);
+  const male = students.filter(s=>s.g==='M').length;
+  const female = students.length - male;
+  const sorted = students.slice().sort((a,b)=>(b.avg||0)-(a.avg||0));
+
+  const badge = s => s.status==='NEW'
+      ? '<span class="pdf-badge new">وافد جديد</span>'
+      : s.status==='PROMOTED'
+      ? '<span class="pdf-badge pro">منتقل</span>'
+      : '<span class="pdf-badge rep">معيد</span>';
+  const origin = s => s.status==='NEW' ? esc(s.origin||'')
+                    : (s.originSection!=null ? 'فوج '+esc(s.originSection) : '');
+
+  const body = sorted.map((s,i)=>{
+    const ex = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
+    const av = s.avg!=null ? s.avg.toFixed(2) : '';
+    const cls = s.avg!=null ? (s.avg>=10?'avg-ok':'avg-no') : '';
+    return `<tr>
+      <td>${i+1}</td>
+      <td class="c-name">${esc(s.name)}</td>
+      <td>${s.g==='M'?'ذكر':'أنثى'}</td>
+      <td>${esc(s.dob)}</td>
+      <td>${badge(s)}</td>
+      <td class="c-origin">${origin(s)}</td>
+      <td class="${cls}">${av}</td>
+      <td class="c-blank">${esc(ex.status||'')}</td>
+      <td class="c-blank">${esc(ex.notes||'')}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="pdf-page">
+    ${pdfLetterhead()}
+    <div class="pdf-bar">
+      <span class="b-title">فوج ${esc(sec)} — ${LEVEL_LABEL[lvl]}</span>
+      <span class="b-meta">${students.length} تلميذ · ${male} ذ / ${female} إ · ${t.repT} معيد</span>
+    </div>
+    <table class="pdf-tb">
+      <thead><tr>
+        <th style="width:5%">الرقم</th><th style="width:24%">الاسم</th><th style="width:7%">الجنس</th>
+        <th style="width:11%">الميلاد</th><th style="width:11%">الحالة</th><th style="width:16%">الأصل</th>
+        <th style="width:8%">المعدل</th><th style="width:9%">الصفة</th><th style="width:9%">ملاحظات</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="pdf-tally">
+      <table class="pdf-sum">
+        <tr><th></th><th>جدد</th><th>معيدون</th><th>داخلي</th><th>ن داخلي</th><th>خارجي</th><th>المجموع</th></tr>
+        <tr><td class="lbl">الذكور</td><td>${t.newM}</td><td>${t.repM}</td><td></td><td></td><td></td><td>${t.totM}</td></tr>
+        <tr><td class="lbl">الإناث</td><td>${t.newF}</td><td>${t.repF}</td><td></td><td></td><td></td><td>${t.totF}</td></tr>
+        <tr><td class="lbl">المجموع</td><td>${t.newT}</td><td>${t.repT}</td><td></td><td></td><td></td><td>${t.total}</td></tr>
+      </table>
+    </div>
+    <div class="pdf-date">${esc(STATE.institution.directorate||'')} في: ${new Date().toISOString().slice(0,10)}</div>
+    <div class="pdf-sign">
+      <div>إمضاء مستشار التربية<span></span></div>
+      <div>إمضاء الناظر<span></span></div>
+      <div>إمضاء المديرية<span></span></div>
+    </div>
+  </div>`;
+}
+
+/* صفحة التعداد العام */
+function pdfCensusPage(){
+  const G = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
+  let body = '';
+  [1,2,3,4].forEach(lvl=>{
+    const so = STATE.results[lvl] && STATE.results[lvl].sections;
+    if (!so) return;
+    const keys = Object.keys(so).sort((a,b)=>Number(a)-Number(b));
+    if (!keys.length) return;
+    const L = {newM:0,newF:0,newT:0,repM:0,repF:0,repT:0,totM:0,totF:0,total:0};
+    keys.forEach(k=>{
+      const t = tally(so[k]);
+      body += `<tr>
+        <td class="cls">${officialClassName(lvl,k)}</td>
+        <td>${t.repM}</td><td>${t.repF}</td><td>${t.repT}</td>
+        <td>${t.newM}</td><td>${t.newF}</td><td>${t.newT}</td>
+        <td>${t.totM}</td><td>${t.totF}</td><td>${t.total}</td></tr>`;
+      Object.keys(L).forEach(p=>L[p]+=t[p]);
+    });
+    body += `<tr class="sub"><td class="cls">${lvl} متوسط</td>
+      <td>${L.repM}</td><td>${L.repF}</td><td>${L.repT}</td>
+      <td>${L.newM}</td><td>${L.newF}</td><td>${L.newT}</td>
+      <td>${L.totM}</td><td>${L.totF}</td><td>${L.total}</td></tr>`;
+    Object.keys(G).forEach(p=>G[p]+=L[p]);
+  });
+  body += `<tr class="tot"><td class="cls">المجمـــوع</td>
+    <td>${G.repM}</td><td>${G.repF}</td><td>${G.repT}</td>
+    <td>${G.newM}</td><td>${G.newF}</td><td>${G.newT}</td>
+    <td>${G.totM}</td><td>${G.totF}</td><td>${G.total}</td></tr>`;
+
+  return `<div class="pdf-page">
+    ${pdfLetterhead()}
+    <div class="pdf-bar"><span class="b-title">تعداد التلاميذ لموسم ${esc(STATE.institution.year)||''}</span>
+      <span class="b-meta">${G.total} تلميذ · ${G.newT} جديد · ${G.repT} معيد</span></div>
+    <table class="pdf-census">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:16%">القسم</th>
+          <th colspan="3" class="grp">التلاميذ المعيدون</th>
+          <th colspan="3" class="grp">التلاميذ الجدد</th>
+          <th colspan="2" class="grp">المجموع</th>
+          <th rowspan="2" style="width:11%">المجموع الكلي</th>
+        </tr>
+        <tr>
+          <th>ذكور</th><th>إناث</th><th>مجموع</th>
+          <th>ذكور</th><th>إناث</th><th>مجموع</th>
+          <th>ذكور</th><th>إناث</th>
+        </tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="pdf-date">${esc(STATE.institution.directorate||'')} في: ${new Date().toISOString().slice(0,10)}</div>
+    <div class="pdf-sign">
+      <div>إمضاء مستشار التربية<span></span></div>
+      <div>إمضاء الناظر<span></span></div>
+      <div>إمضاء المديرية<span></span></div>
+    </div>
+  </div>`;
+}
+
+/* فتح نافذة الطباعة */
+function openPdfView(html, label){
+  const root = document.getElementById('printRoot');
+  root.innerHTML = html;
+  const prevTitle = document.title;
+  const tag = (STATE.institution.school||'قوائم').trim();
+  document.title = tag + ' — ' + label;   // يصير اسم ملف PDF المقترح
+  document.body.classList.add('printing');
+
+  const cleanup = () => {
+    document.body.classList.remove('printing');
+    root.innerHTML = '';
+    document.title = prevTitle;
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(()=>{ window.print(); setTimeout(cleanup, 800); }, 120);
+}
+
+function pdfLevel(lvl){
+  if (!STATE.results) return;
+  const so = STATE.results[lvl].sections;
+  const keys = Object.keys(so).sort((a,b)=>Number(a)-Number(b));
+  if (!keys.length) return;
+  openPdfView(keys.map(k=>pdfClassPage(lvl,k,so[k])).join(''), LEVEL_LABEL[lvl]);
+}
+function pdfCensus(){
+  if (!STATE.results) return;
+  openPdfView(pdfCensusPage(), 'تعداد التلاميذ');
+}
+function pdfAll(){
+  if (!STATE.results) return;
+  let html = pdfCensusPage();
+  [1,2,3,4].forEach(lvl=>{
+    const so = STATE.results[lvl] && STATE.results[lvl].sections;
+    if (!so) return;
+    Object.keys(so).sort((a,b)=>Number(a)-Number(b)).forEach(k=>{
+      html += pdfClassPage(lvl,k,so[k]);
+    });
+  });
+  openPdfView(html, 'كل القوائم');
+}
+
 /* ═══════════════════════════════════════════════════════════════
    EXCEL EXPORT — official Algerian ministry layout
    • ورقة لكل قسم: قوائم تلاميذ قسم (بالترويسة والتعداد والإمضاءات)
@@ -2131,8 +2398,17 @@ function renderExport(){
         <span class="g-chip f">معيدون: <b>${gRep}</b></span>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn gold" id="exportCensusBtn">📊 تصدير ورقة التعداد</button>
-        <button class="btn primary" id="exportAllBtn">📦 تصدير كل القوائم + التعداد (ملف واحد)</button>
+        <button class="btn gold" id="exportCensusBtn">📊 Excel — ورقة التعداد</button>
+        <button class="btn primary" id="exportAllBtn">📦 Excel — كل القوائم + التعداد</button>
+      </div>
+      <div style="border-top:1px dashed var(--line); margin-top:14px; padding-top:12px;">
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:9px;">
+          🖨 <b>تصدير PDF</b> — تُفتح نافذة الطباعة، اختر <b>"حفظ بصيغة PDF"</b> كوجهة الطباعة
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn ghost" id="pdfCensusBtn">📄 PDF — ورقة التعداد</button>
+          <button class="btn ghost" id="pdfAllBtn">📕 PDF — كل القوائم + التعداد</button>
+        </div>
       </div>
     </div>` +
     [1,2,3,4].map(lvl=>{
@@ -2145,12 +2421,18 @@ function renderExport(){
           <div class="lbl-main">${LEVEL_LABEL[lvl]} الجديدة</div>
           <div class="lbl-sub">${Object.keys(secObj).length} قسم — ${total} تلميذ (${total-rep} جديد · ${rep} معيد)</div>
         </div>
-        <button class="btn gold small" data-export-lvl="${lvl}">⬇ تصدير Excel</button></div>`;
+        <span style="display:flex; gap:7px;">
+          <button class="btn gold small" data-export-lvl="${lvl}">⬇ Excel</button>
+          <button class="btn ghost small" data-pdf-lvl="${lvl}">🖨 PDF</button>
+        </span></div>`;
     }).join('');
 
   card.querySelectorAll('[data-export-lvl]').forEach(btn=> btn.addEventListener('click', ()=> exportLevel(Number(btn.dataset.exportLvl))));
+  card.querySelectorAll('[data-pdf-lvl]').forEach(btn=> btn.addEventListener('click', ()=> pdfLevel(Number(btn.dataset.pdfLvl))));
   const ecb = document.getElementById('exportCensusBtn'); if (ecb) ecb.addEventListener('click', exportCensus);
   const eab = document.getElementById('exportAllBtn');    if (eab) eab.addEventListener('click', exportAll);
+  const pcb = document.getElementById('pdfCensusBtn');    if (pcb) pcb.addEventListener('click', pdfCensus);
+  const pab = document.getElementById('pdfAllBtn');       if (pab) pab.addEventListener('click', pdfAll);
 }
 
 /* ---------- IMPORT ENGINE ---------- */
