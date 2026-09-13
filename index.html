@@ -302,6 +302,11 @@ if (typeof XLSX === 'undefined') {
 
 
 
+
+  .empty-warn{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 14px; margin-bottom:11px;
+    border:1.5px solid var(--red); border-radius:9px; background:var(--red-soft); color:var(--red); font-size:12.5px;}
+  body.dark .empty-warn{background:#2A1822;}
+
   .anx-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   @media(max-width:760px){.anx-grid{grid-template-columns:1fr;}}
   .anx-lbl{font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.3px;}
@@ -1486,6 +1491,11 @@ function runDistribution(){
 
   /* ── preserve manually-added empty sections ── */
   [1,2,3,4].forEach(lvl=>{
+    // العدد المحدد يدويًا أو وضع إعادة التوزيع = مرجع قاطع، لا تُضَف أفواج قديمة
+    const fixed = !!STATE.newSectionsCount[lvl]
+               || (lvl>1 && STATE.config.levelMode[lvl]==='rebalance')
+               || STATE.config.keepSectionIdentity;
+    if (fixed){ STATE._extraSections[lvl] = []; return; }
     (STATE._extraSections[lvl]||[]).forEach(k=>{ if (!results[lvl].sections[k]) results[lvl].sections[k] = []; });
   });
 
@@ -1911,12 +1921,17 @@ function renderLevelMapCard(lvl){
     ${renderAnnexBox(lvl)}`;
 
   card.querySelectorAll('[data-seg-level] .seg').forEach(seg=>{
-    seg.addEventListener('click', ()=>{ STATE.config.levelMode[lvl] = seg.dataset.mode; persist(); rerun(); });
+    seg.addEventListener('click', ()=>{
+      STATE.config.levelMode[lvl] = seg.dataset.mode;
+      STATE._extraSections[lvl] = [];
+      persist(); rerun();
+    });
   });
   const nsInput = card.querySelector('[data-new-sections]');
   if (nsInput) nsInput.addEventListener('input', e=>{
     const v = Number(e.target.value);
     STATE.newSectionsCount[lvl] = (v && v>0) ? v : null;
+    STATE._extraSections[lvl] = [];      // ابدأ من العدد الجديد نظيفًا
     persist(); rerun();
   });
   wireAnnex(card);          // مفاتيح الملحقة تعمل في كل الأوضاع
@@ -2092,11 +2107,17 @@ function renderLevelPanel(lvl){
     <div class="sub-tab ${STATE.activeSubTab[lvl]==='ALL'?'active':''}" data-lvl="${lvl}" data-tab="ALL">كل الأفواج</div>
     ${keys.map(k=>`<div class="sub-tab ${STATE.activeSubTab[lvl]===k?'active':''}" data-lvl="${lvl}" data-tab="${k}">فوج ${k} (${secObj[k].length})</div>`).join('')}
   </div>`;
+  const emptyKeys = keys.filter(k=>(secObj[k]||[]).length===0);
+  const emptyBar = emptyKeys.length ? `<div class="empty-warn no-print">
+      ⚠️ <b>${emptyKeys.length} فوج فارغ</b> (${emptyKeys.map(k=>'فوج '+k).join('، ')}) —
+      غالبًا بقايا إعداد سابق.
+      <button class="btn danger small" id="dropEmpty${lvl}">🗑 حذف الأفواج الفارغة</button>
+    </div>` : '';
   const annexT = ((STATE.config.annexTargets||{})[lvl]||[]).map(String);
   const annexChips = keys.map(k=>`<label class="anx-chip sm ${annexT.includes(String(k))?'on':''}">
       <input type="checkbox" class="anx-target" data-anx-lvl="${lvl}" data-anx-t="${k}" ${annexT.includes(String(k))?'checked':''}> ${k}
     </label>`).join('');
-  const toolbar = `<div class="toolbar no-print">
+  const toolbar = emptyBar + `<div class="toolbar no-print">
       <label class="filter-chip"><input type="checkbox" id="filterRepeat${lvl}" ${STATE.filterRepeatOnly[lvl]?'checked':''}> إظهار المعيدين فقط</label>
       <button class="btn ghost small" id="addSection${lvl}">+ إضافة فوج جديد</button></div>
     <div class="anx-inline no-print">
@@ -2123,6 +2144,12 @@ function renderLevelPanel(lvl){
 
   content.innerHTML = tabsHtml + toolbar + `<div class="section-grid${isSingleView?' single-view':''}">${cards}</div>`;
   wireAnnex(content);
+  const dropBtn = document.getElementById('dropEmpty'+lvl);
+  if (dropBtn) dropBtn.addEventListener('click', ()=>{
+    emptyKeys.forEach(k=>{ delete STATE.results[lvl].sections[k]; });
+    STATE._extraSections[lvl] = (STATE._extraSections[lvl]||[]).filter(k=>!emptyKeys.map(String).includes(String(k)));
+    persist(); renderLevelPanel(lvl); renderSchoolMap(); renderExport(); renderOverview();
+  });
   content.querySelectorAll('.sub-tab').forEach(t=> t.addEventListener('click', ()=>{ STATE.activeSubTab[lvl]=t.dataset.tab; renderLevelPanel(lvl); }));
   const fchk = document.getElementById('filterRepeat'+lvl);
   if (fchk) fchk.addEventListener('change', e=>{ STATE.filterRepeatOnly[lvl]=e.target.checked; renderLevelPanel(lvl); });
@@ -2474,6 +2501,7 @@ function adoptRoster(){
       mt++;
     }
   });
+  // لا نمسّ إعدادات التفويج إطلاقًا: نحتفظ بالخريطة والملحقة والنقل اليدوي كما هي
   persist(); rerun();
   const warn = _rosterNotIn.length
     ? `<div class="alert warn" style="margin-top:8px;">⚠️ أُضيف أيضًا <b>${_rosterNotIn.length}</b> تلميذ
@@ -2483,7 +2511,7 @@ function adoptRoster(){
   document.getElementById('rosterReport').innerHTML=
     `<div class="alert ok"><b>✓ تم اعتماد المصدر.</b><br>
      ثُبّت المستوى لـ <b>${lv}</b> تلميذ · أُدرج رقم التسجيل والنظام لـ <b>${mt}</b> تلميذ.<br>
-     اضبط الآن وجهات الأفواج وأفواج الملحقة من «الخريطة المدرسية».</div>` + warn;
+     <span style="font-size:12px;color:var(--ink-soft)">لم تُمَسّ إعدادات التفويج: الخريطة المدرسية وأفواج الملحقة والنقل اليدوي بقيت كما ضبطتَها.</span></div>` + warn;
   _rosterParsed=null;
 }
 
@@ -5040,6 +5068,7 @@ document.getElementById('targetSize1').addEventListener('input', e=>{ STATE.conf
 document.getElementById('newSections1').addEventListener('input', e=>{
   const v = Number(e.target.value);
   STATE.newSectionsCount[1] = (v && v>0) ? v : null;
+  STATE._extraSections[1] = [];
   persist(); rerun();
 });
 document.getElementById('mergeRepeaters1').addEventListener('change', e=>{ STATE.config.mergeRepeaters1 = e.target.checked; persist(); rerun(); });
