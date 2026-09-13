@@ -303,6 +303,14 @@ if (typeof XLSX === 'undefined') {
 
 
 
+
+  .demo-banner{display:flex; align-items:center; gap:14px; padding:13px 18px; margin-bottom:18px;
+    border:2px solid var(--red); border-radius:10px; background:var(--red-soft); color:var(--red);}
+  body.dark .demo-banner{background:#2A1822;}
+  .demo-banner .db-ico{font-size:26px;}
+  .demo-banner .db-txt{flex:1; font-size:13px; line-height:1.7;}
+  .demo-banner .db-txt div{color:var(--ink-soft); font-size:12px; margin-top:3px;}
+
   .empty-warn{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 14px; margin-bottom:11px;
     border:1.5px solid var(--red); border-radius:9px; background:var(--red-soft); color:var(--red); font-size:12.5px;}
   body.dark .empty-warn{background:#2A1822;}
@@ -570,6 +578,15 @@ if (typeof XLSX === 'undefined') {
   </aside>
 
   <main class="main">
+    <div id="demoBanner" class="demo-banner no-print" style="display:none;">
+      <span class="db-ico">⚠️</span>
+      <div class="db-txt">
+        <b>تنبيه: أنت تعمل حاليًا على بيانات عرض تجريبية — ليست بيانات مؤسستك.</b>
+        <div>أي توزيع أو قوائم تُصدِّرها الآن لا تخصّ تلاميذك الحقيقيين.
+        انتقل إلى <b>«استيراد البيانات»</b> واستورد ملفاتك أو استعد نسخة احتياطية.</div>
+      </div>
+      <button class="btn primary small" id="demoGoImport">الذهاب للاستيراد</button>
+    </div>
 
     <section class="panel active" id="panel-overview">
       <div class="topline"><h1>نظرة عامة على بيانات السنة الدراسية الحالية</h1><div class="sub" id="overview-year-sub"></div></div>
@@ -668,6 +685,11 @@ if (typeof XLSX === 'undefined') {
               <div class="lbl-sub">يُجبر التدوير على اختيار قسم مختلف — لتجديد البيئة الاجتماعية للمعيد</div></div>
             </div>
             <div class="toggle-row" style="padding:5px 0; border-top:1px dashed var(--line); margin-top:6px;">
+              <div class="switch"><input type="checkbox" id="optStableBalance"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">⚖️ استقرار + موازنة (مُوصى به)</div>
+              <div class="lbl-sub">يُبقي تلاميذ 1م1 في 2م1 قدر الإمكان، ثم يصحّح الفوارق في العدد والجنس والمستوى بتحريك <b>المعيدين والأقل معدلًا</b> — مفيد حين يزيد عدد الأفواج</div></div>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
               <div class="switch"><input type="checkbox" id="optKeepIdentity"><div class="track"><div class="knob"></div></div></div>
               <div><div class="lbl-main">➡️ الانتقال بنفس رقم الفوج (1م1 ← 2م1)</div>
               <div class="lbl-sub">تلاميذ الفوج 1 ينتقلون للفوج 1 في المستوى الموالي، والفوج 2 للفوج 2… دون تدوير</div></div>
@@ -1007,7 +1029,8 @@ let STATE = {
     genderBalance: true,     // موازنة الجنس بشكل صارم
     avoidSameSection: true,  // المعيد لا يعود لنفس قسمه السابق
     // ─── SCOPE: 'all' = تطبيق على كل المستويات | 'custom' = لكل مستوى إعداداته ───
-    keepSectionIdentity: false,   // 1م1 ← 2م1 : الحفاظ على رقم الفوج عند الانتقال
+    keepSectionIdentity: false,   // 1م1 ← 2م1 : الحفاظ على رقم الفوج (صارم)
+    stableBalance: true,          // استقرار + موازنة العدد والجنس والمستوى
     schoolSections: {},           // "اسم الابتدائية" -> [أرقام أفواج السنة الأولى]
     optScope: 'all',
     levelOpts: {
@@ -1081,6 +1104,7 @@ function normalizeConfig(){
     annexTargets:{1:[],2:[],3:[],4:[]},
     seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true,
     keepSectionIdentity:false,
+    stableBalance:true,
     schoolSections:{},
     optScope:'all',
     levelOpts:{1:{},2:{},3:{},4:{}}
@@ -1123,6 +1147,102 @@ function optsFor(lvl){
     genderBalance:    cfg.genderBalance     !== false,
     avoidSameSection: cfg.avoidSameSection  !== false
   };
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   توزيع مستقر متوازن:
+   يحافظ على رقم الفوج قدر الإمكان (1م1 ← 2م1)، ثم يصحّح الفوارق
+   في العدد والجنس والمستوى الدراسي بتحريك المعيدين والأقل معدلًا.
+═══════════════════════════════════════════════════════════════ */
+function stableBalanceAssign(students, keys, counts, result){
+  if (!keys.length || !students.length) return;
+  const n = keys.length, total = students.length;
+  const base = Math.floor(total/n), extra = total % n;
+  const cap = {}; keys.forEach((k,i)=> cap[k] = base + (i < extra ? 1 : 0));
+
+  const put = (k,s)=>{ result[k].push(s); counts[k].total++; counts[k][s.g]++; };
+  const av  = s => (s.avg==null ? 0 : s.avg);
+  /* الأولوية في البقاء: المعدل الأعلى ثم غير المعيد — المعيد والأضعف هما أداة الموازنة */
+  const keepRank = (a,b) => (av(b)-av(a)) || ((a.status==='REPEAT'?1:0)-(b.status==='REPEAT'?1:0));
+
+  /* 1) اجلس كلٌّ في فوجه الأصلي ضمن الحصة، والفائض يصير قابلًا للتحريك */
+  const byOrigin = new Map(); keys.forEach(k=>byOrigin.set(k,[]));
+  const movable = [];
+  students.forEach(s=>{
+    const d = Number(s.originSection);
+    if (keys.includes(d)) byOrigin.get(d).push(s); else movable.push(s);
+  });
+  byOrigin.forEach((arr,k)=>{
+    arr.sort(keepRank);
+    arr.slice(0, cap[k]).forEach(s=>put(k,s));
+    movable.push(...arr.slice(cap[k]));
+  });
+
+  /* 2) وزّع القابلين للتحريك على الأفواج الناقصة
+        المعيار: الأقل عددًا، ثم الأضعف أكاديميًا، ثم موازنة الجنس */
+  const secAvg = k => result[k].length ? result[k].reduce((t,s)=>t+av(s),0)/result[k].length : 0;
+  /* الأقوى يذهب للفوج الأضعف — لتتقارب مستويات الأفواج */
+  movable.sort((a,b)=> av(b)-av(a));
+  movable.forEach(s=>{
+    const open = keys.filter(k=>result[k].length < cap[k]);
+    const pool = open.length ? open : keys;
+    let best=null, bestScore=Infinity;
+    pool.forEach(k=>{
+      const gc = s.g==='M' ? counts[k].M : counts[k].F;
+      const score = result[k].length*1000 + secAvg(k)*10 + gc;
+      if (score < bestScore){ bestScore = score; best = k; }
+    });
+    put(best, s);
+  });
+
+  /* 2.5) موازنة المستوى الدراسي: بادل بين أقوى فوج وأضعف فوج مع تثبيت الجنس */
+  const mean = k => result[k].length ? result[k].reduce((t,s)=>t+av(s),0)/result[k].length : 0;
+  for (let pass=0; pass<200; pass++){
+    let hi=keys[0], lo=keys[0];
+    keys.forEach(k=>{ if (mean(k)>mean(hi)) hi=k; if (mean(k)<mean(lo)) lo=k; });
+    const spread = mean(hi)-mean(lo);
+    if (spread <= 0.45) break;
+    /* أقوى تلميذ في الفوج القوي ↔ أضعف تلميذ من نفس جنسه في الفوج الضعيف */
+    let bi=-1, bj=-1, bGain=0;
+    result[hi].forEach((x,i)=>{
+      result[lo].forEach((y,j)=>{
+        if (x.g !== y.g) return;              // لا نمسّ توازن الجنس
+        const d = av(x)-av(y);
+        if (d <= 0) return;
+        if (d > bGain){ bGain = d; bi = i; bj = j; }
+      });
+    });
+    if (bi<0) break;
+    const x = result[hi].splice(bi,1)[0], y = result[lo].splice(bj,1)[0];
+    result[hi].push(y); result[lo].push(x);
+    if (mean(hi)-mean(lo) >= spread){         // لا تحسّن ⇒ تراجع وتوقّف
+      result[hi].pop(); result[lo].pop();
+      result[hi].splice(bi,0,x); result[lo].splice(bj,0,y);
+      break;
+    }
+  }
+
+  /* 3) موازنة الجنس بتبادل تلميذين متقاربَي المستوى (حتى لا تُفسد التوازن الأكاديمي) */
+  const targetM = Math.round(students.filter(s=>s.g==='M').length / n);
+  for (let pass=0; pass<60; pass++){
+    let moved = false;
+    for (const a of keys) for (const b of keys){
+      if (a===b) continue;
+      if (counts[a].M - targetM <= 0 || counts[b].M - targetM >= 0) continue;
+      let bi=-1, bj=-1, bd=Infinity;
+      result[a].forEach((x,i)=>{ if (x.g!=='M') return;
+        result[b].forEach((y,j)=>{ if (y.g!=='F') return;
+          const d = Math.abs(av(x)-av(y));
+          if (d < bd){ bd=d; bi=i; bj=j; } }); });
+      if (bi<0 || bj<0 || bd>2.5) continue;     // لا نبادل إلا بين متقاربين
+      const x = result[a].splice(bi,1)[0], y = result[b].splice(bj,1)[0];
+      result[a].push(y); result[b].push(x);
+      counts[a].M--; counts[a].F++; counts[b].M++; counts[b].F--;
+      moved = true;
+    }
+    if (!moved) break;
+  }
 }
 
 /* ── Basic greedy: picks section with min total, tie-break by min same-gender ── */
@@ -1314,6 +1434,18 @@ function runDistribution(){
     if (cfg.keepSectionIdentity){
       repeaters1.forEach(s=>{ let d=Number(s.originSection);
         if(!d||!r1[d]) d=keys1[0]; r1[d].push(s); c1[d].total++; c1[d][s.g]++; });
+    } else if (cfg.stableBalance && repeaters1.length > 0){
+      // المعيدون أداة الموازنة: يملأون الأفواج الأقل عددًا والأضعف مستوى
+      const sAvg = k => r1[k].length ? r1[k].reduce((t,s)=>t+(s.avg||0),0)/r1[k].length : 0;
+      repeaters1.slice().sort((a,b)=>(b.avg||0)-(a.avg||0)).forEach(s=>{
+        let best=null, bs=Infinity;
+        keys1.forEach(k=>{
+          const gc = s.g==='M'?c1[k].M:c1[k].F;
+          const sc = r1[k].length*1000 + sAvg(k)*10 + gc;
+          if (sc<bs){ bs=sc; best=k; }
+        });
+        r1[best].push(s); c1[best].total++; c1[best][s.g]++;
+      });
     } else if (o1.repeaterRotation && repeaters1.length > 0){
       rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, o1.avoidSameSection);
     } else {
@@ -1393,6 +1525,28 @@ function runDistribution(){
       });
       results[lvl] = {sections: result};
       return;                       // لا تدوير ولا موازنة — الرقم محفوظ كما هو
+    }
+
+    /* ⚖️ استقرار + موازنة — يسبق بقية الأوضاع (عدا التطابق الصارم) */
+    if (cfg.stableBalance && !cfg.keepSectionIdentity){
+      const target = cfg.levelTargetSize[lvl];
+      const n = STATE.newSectionsCount[lvl]
+             || (cfg.levelMode[lvl]==='rebalance'
+                   ? Math.max(1, Math.ceil(POOLS[lvl].length/target))
+                   : Math.max(1, newSectionKeysFor(lvl).length));
+      keys = Array.from({length:n}, (_,i)=>i+1);
+      ({counts, result} = freshCounts(keys));
+      const aK = keys.filter(k=>isAnnexTarget(lvl,k));
+      const mK = keys.filter(k=>!isAnnexTarget(lvl,k));
+      const all = promoted.concat(repeaters);
+      if (aK.length){
+        stableBalanceAssign(all.filter(s=>isAnnexOrigin(lvl,s.originSection)), aK, counts, result);
+        stableBalanceAssign(all.filter(s=>!isAnnexOrigin(lvl,s.originSection)), mK.length?mK:keys, counts, result);
+      } else {
+        stableBalanceAssign(all, keys, counts, result);
+      }
+      results[lvl] = {sections: result};
+      return;
     }
 
     if (cfg.levelMode[lvl] === 'rebalance'){
@@ -1575,6 +1729,15 @@ function applyDarkMode(){
   document.body.classList.toggle('dark', STATE.darkMode);
   const chk = document.getElementById('darkModeToggle');
   if (chk) chk.checked = STATE.darkMode;
+}
+
+
+/* شريط تحذير بيانات العرض التجريبي */
+function updateDemoBanner(){
+  const el = document.getElementById('demoBanner');
+  if (!el) return;
+  const isDemo = (RAW_DATA === DEMO_DATA) && RAW_DATA.current.length > 0;
+  el.style.display = isDemo ? 'flex' : 'none';
 }
 
 function renderOverview(){
@@ -2100,7 +2263,11 @@ function renderLevelPanel(lvl){
   const repCounts = keys.map(k=>secObj[k].filter(s=>s.status==='REPEAT').length);
   const maxRep = Math.max(...repCounts), minRep = Math.min(...repCounts);
   const balanceEmoji = (maxSize-minSize<=2 && maxGDiff<=2) ? '✅' : (maxSize-minSize<=4) ? '⚠️' : '❌';
-  subEl.innerHTML = `${keys.length} فوج — ${totalStudents} تلميذ &nbsp;|&nbsp; ${balanceEmoji} توازن الأحجام: ${minSize}-${maxSize} &nbsp;|&nbsp; ♂♀ فرق الجنس: ≤${maxGDiff} &nbsp;|&nbsp; 🔁 معيدون: ${minRep}-${maxRep}/فوج`;
+  const avgs = keys.map(k=>{ const a=secObj[k]||[]; const v=a.filter(s=>s.avg!=null);
+    return v.length ? v.reduce((t,s)=>t+s.avg,0)/v.length : 0; }).filter(x=>x>0);
+  const avgSpread = avgs.length ? (Math.max(...avgs)-Math.min(...avgs)) : 0;
+  const avgIcon = avgSpread<=0.6 ? '✅' : avgSpread<=1.2 ? '⚠️' : '❌';
+  subEl.innerHTML = `${keys.length} فوج — ${totalStudents} تلميذ &nbsp;|&nbsp; ${balanceEmoji} الأحجام: ${minSize}-${maxSize} &nbsp;|&nbsp; ♂♀ الجنس: ≤${maxGDiff} &nbsp;|&nbsp; 🔁 معيدون: ${minRep}-${maxRep}/فوج &nbsp;|&nbsp; ${avgIcon} فرق المستوى: ${avgSpread.toFixed(2)}`;
   if (STATE.activeSubTab[lvl] === null) STATE.activeSubTab[lvl] = 'ALL';
 
   const tabsHtml = `<div class="sub-tabs">
@@ -3962,6 +4129,7 @@ function renderGuide(){
 
 
 function renderAll(){
+  updateDemoBanner();
   renderOverview(); renderInstitution(); renderSchoolMap();
   [1,2,3,4].forEach(renderLevelPanel);
   renderSpecial(); renderExport(); renderGuide();
@@ -4984,7 +5152,7 @@ function renderDistOptions(){
   /* global toggles */
   const g = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
              optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance',
-             optKeepIdentity:'keepSectionIdentity'};
+             optKeepIdentity:'keepSectionIdentity', optStableBalance:'stableBalance'};
   Object.keys(g).forEach(id=>{
     const el = document.getElementById(id);
     if (el) el.checked = cfg[g[id]] !== false;
@@ -5081,13 +5249,13 @@ document.querySelectorAll('#optScopeSeg .seg').forEach(seg=>{
 });
 
 /* ── global (all-levels) toggles ── */
-['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance','optKeepIdentity'].forEach(id=>{
+['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance','optKeepIdentity','optStableBalance'].forEach(id=>{
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('change', e=>{
     const map = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
                  optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance',
-                 optKeepIdentity:'keepSectionIdentity'};
+                 optKeepIdentity:'keepSectionIdentity', optStableBalance:'stableBalance'};
     STATE.config[map[id]] = e.target.checked;
     persist(); rerun();
   });
@@ -5111,6 +5279,7 @@ document.getElementById('cmpFileA').addEventListener('change', e=>{ if(e.target.
 document.getElementById('cmpFileB').addEventListener('change', e=>{ if(e.target.files.length) loadCmp('B', e.target.files[0]); });
 document.getElementById('cmpTwoBtn').addEventListener('click', compareTwoLists);
 document.getElementById('forceRedistBtn').addEventListener('click', forceRedistribute);
+document.getElementById('demoGoImport').addEventListener('click', ()=>document.querySelector('[data-panel="import"]').click());
 document.getElementById('downloadTemplate4').addEventListener('click', downloadLvl4Template);
 document.getElementById('applyImport').addEventListener('click', applyImportedData);
 document.getElementById('resetToDemo').addEventListener('click', ()=>{ if (confirm('سيتم استبدال البيانات الحالية ببيانات العرض التجريبي. متابعة؟')) resetToDemo(); });
