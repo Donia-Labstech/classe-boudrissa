@@ -298,6 +298,53 @@ if (typeof XLSX === 'undefined') {
   .portal-not-found .emoji{font-size:32px; display:block; margin-bottom:8px;}
   
 
+
+
+  /* ═══ ADVANCED MAPPING + ANNEX ═══ */
+  table.map-table.adv thead th{text-align:center; font-size:11px; padding:7px 6px;
+    background:var(--th-bg); border-bottom:2px solid var(--green); color:var(--heading); font-weight:700;}
+  table.map-table.adv thead th span{font-weight:500; font-size:9.5px; color:var(--ink-soft);}
+  table.map-table.adv td{text-align:center; padding:6px; border-bottom:1px solid var(--line);}
+  table.map-table.adv td:first-child{text-align:right;}
+  table.map-table.adv tr.anx td{background:#F6F1E4;}
+  table.map-table.adv tr.anx td:first-child::after{content:' 🏫'; font-size:11px;}
+  table.map-table.adv input[type=number]{width:56px; text-align:center;}
+  table.map-table.adv input[type=number]:disabled{opacity:.32; background:var(--th-bg);}
+  table.map-table.adv input[type=checkbox]{width:16px; height:16px; accent-color:var(--gold); cursor:pointer;}
+  .anx-box{margin-top:12px; border:1px solid var(--gold); border-radius:9px; padding:11px 14px; background:#FFFDF6;}
+  body.dark .anx-box{background:#23271C;}
+  .anx-title{font-family:'El Messiri',sans-serif; font-weight:700; font-size:13px; color:var(--heading);}
+  .anx-hint{font-size:11.5px; color:var(--ink-soft); margin:4px 0 9px;}
+  .anx-chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .anx-chip{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600;
+    border:1px solid var(--line); background:var(--paper-2); border-radius:999px; padding:4px 11px; cursor:pointer;}
+  .anx-chip.on{border-color:var(--gold); background:var(--gold-soft); color:#6B4B0E;}
+  .anx-chip input{margin:0; accent-color:var(--gold); cursor:pointer;}
+
+  /* ═══ DISTRIBUTION COMPARE REPORT ═══ */
+  .cmp-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:14px;}
+  .cmp-box{border:1px solid var(--line); border-radius:9px; padding:11px 13px; background:var(--paper-2);}
+  .cmp-box .cb-n{font-family:'El Messiri',sans-serif; font-size:25px; font-weight:700; line-height:1.1;}
+  .cmp-box .cb-l{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+  .cmp-box.ok  .cb-n{color:#2F5233;}
+  .cmp-box.warn .cb-n{color:#B8862E;}
+  .cmp-box.bad  .cb-n{color:var(--red);}
+  .cmp-box.info .cb-n{color:#33524A;}
+  .cmp-details{border:1px solid var(--line); border-radius:9px; margin-bottom:10px; overflow:hidden;}
+  .cmp-details summary{padding:9px 14px; cursor:pointer; font-size:13px; font-weight:700;
+    background:var(--th-bg); color:var(--heading); user-select:none;}
+  .cmp-details summary:hover{background:var(--hover-bg);}
+  .cmp-details .cd-body{max-height:230px; overflow:auto; background:var(--paper-2);}
+  table.cmp-tb{width:100%; border-collapse:collapse; font-size:12px;}
+  table.cmp-tb th{position:sticky; top:0; background:var(--th-bg); padding:6px 9px;
+    text-align:right; font-size:10.5px; color:var(--ink-soft); border-bottom:1px solid var(--line);}
+  table.cmp-tb td{padding:5px 9px; border-bottom:1px solid var(--row-border);}
+  table.cmp-tb tr:hover td{background:var(--hover-bg);}
+  .cmp-tag{font-size:10px; font-weight:700; padding:1.5px 7px; border-radius:999px; white-space:nowrap;}
+  .cmp-tag.rep{background:var(--red-soft); color:var(--red);}
+  .cmp-tag.pro{background:var(--blue-soft); color:#33524A;}
+  .cmp-tag.new{background:var(--gold-soft); color:#7A560F;}
+
   /* ═══════════ PDF / PRINT VIEW ═══════════ */
   #printRoot{ display:none; }
   body.printing #printRoot{ display:block; }
@@ -674,6 +721,38 @@ if (typeof XLSX === 'undefined') {
         <div class="import-log" id="logLvl4" style="display:none;"></div>
       </div>
 
+      <div class="card" style="border:1.5px solid var(--gold); background:linear-gradient(180deg,#FFFDF6,var(--paper-2));">
+        <h3>📋 استيراد «قوائم ما قبل التفويج» (المصدر المعتمد)</h3>
+        <div class="hint">
+          الملف المسطّح المستخرج من الرقمنة (رقم تعريف · اسم التلميذ · تاريخ ميلاد · مستوى · رقم الفوج · النظام · رقم التسجيل).
+          يعتمد التطبيق منه: <b>المستوى المقرَّر</b> و<b>رقم التسجيل</b> و<b>النظام (الصفة)</b> —
+          ويُبقي فوج التلميذ الحالي كـ«أصل». <b>لا يُستورَد رقم الفوج</b> لأنه التوزيع المراد تصحيحه.
+        </div>
+        <label class="dropzone" for="fileRoster">
+          <div class="dz-icon">📋</div>
+          <div class="dz-title">اضغط لاختيار ملف «قوائم قبل التفويج»</div>
+          <div class="dz-sub">xlsx / xls — ورقة واحدة مسطّحة</div>
+          <input type="file" id="fileRoster" accept=".xls,.xlsx">
+        </label>
+        <div id="rosterReport" style="margin-top:13px;"></div>
+      </div>
+
+      <div class="card" style="border:1.5px solid var(--green); background:linear-gradient(180deg,#F2F6F2,var(--paper-2));">
+        <h3>🔍 مطابقة ملف توزيع رسمي (مراجعة القوائم)</h3>
+        <div class="hint">
+          ارفع ملف قوائم جاهز (من منظومة الوزارة أو توزيع سابق) — يقارنه التطبيق بقاعدة بياناتك،
+          يكشف <b>التلاميذ الناقصين</b> و<b>المكرّرين</b> و<b>اختلافات رقم التعريف</b>،
+          ثم يعتمد نفس توزيع الملف ويُدرج الناقصين في الأقسام الأقل عددًا.
+        </div>
+        <label class="dropzone" for="fileDistCompare">
+          <div class="dz-icon">🗂</div>
+          <div class="dz-title">اضغط لاختيار ملف القوائم (xls / xlsx)</div>
+          <div class="dz-sub">ملف واحد يحتوي كل الأقسام</div>
+          <input type="file" id="fileDistCompare" accept=".xls,.xlsx">
+        </label>
+        <div id="distCompareReport" style="margin-top:14px;"></div>
+      </div>
+
       <div class="card">
         <h3>الخلاصة والاعتماد</h3>
         <div id="importSummary" class="hint">لم يتم استيراد أي بيانات بعد.</div>
@@ -840,6 +919,9 @@ let STATE = {
     mapping: {2:{}, 3:{}, 4:{}},
     levelMode: {2:'identity', 3:'identity', 4:'identity'},
     levelTargetSize: {2:32, 3:32, 4:32},
+    repMapping:  {1:{}, 2:{}, 3:{}, 4:{}},   // وجهة المعيدين لكل فوج أصلي
+    annexOrigins:{1:[], 2:[], 3:[], 4:[]},   // أفواج الملحقة (الأصل)
+    annexTargets:{1:[], 2:[], 3:[], 4:[]},   // أفواج الملحقة (الوجهة)
     // ─── SMART DISTRIBUTION (global defaults) ───
     seedTopN: true,          // وضع الأوائل: أول N وافد في كل قسم
     repeaterRotation: true,  // تدوير المعيدين: توزيع ذكي بدل الإبقاء في نفس القسم
@@ -855,7 +937,8 @@ let STATE = {
     }
   },
   overrides: {}, genderOverrides: {}, deletedUids: {},
-  studentExtras: {},   // uid -> {guardian, guardianRel, phone1, phone2, address, siblings, orphan, illness, notes, signature}
+  studentExtras: {},   // uid -> {guardian, ..., matricule, regime}
+  rosterLevels: {},    // uid -> المستوى المعتمد من ملف "قبل التفويج"
   hideBranding: false,  // إخفاء حقوق الملكية عند الطباعة
   dbCleared: false,     // true بعد مسح قاعدة البيانات — يمنع عودة بيانات العرض التجريبي
   newSectionsCount: {1:null,2:null,3:null,4:null}, // عدد أقسام السنة الجديدة (يدوي)
@@ -872,13 +955,18 @@ function buildPools(){
   newArr.forEach(r => {
     const uid = 'N-' + r.rank;
     if (STATE.deletedUids[uid]) return;
-    forLevel[1].push({ uid, name:r.ln+' '+r.fn, g: STATE.genderOverrides[uid]||r.g, dob:r.dob, avg:r.avg, origin:r.origin, originSection:null, status:'NEW', gsrc:r.gsrc });
+    const lv = STATE.rosterLevels[uid] || 1;
+    forLevel[lv].push({ uid, name:r.ln+' '+r.fn, g: STATE.genderOverrides[uid]||r.g, dob:r.dob, avg:r.avg, origin:r.origin, originSection:null, status:'NEW', gsrc:r.gsrc });
   });
   current.forEach(r => {
     const uid = 'C-' + r.id;
     if (STATE.deletedUids[uid]) return;
     const rec = { uid, id:r.id, name:r.ln+' '+r.fn, g: STATE.genderOverrides[uid]||r.g, dob:r.dob, avg:r.avg, t1:r.t1,t2:r.t2,t3:r.t3, originLevel:r.lvl, originSection:r.sec, b10:r.b10 };
-    if (r.dec === 'R') forLevel[r.lvl].push({...rec, status:'REPEAT'});
+    const forced = STATE.rosterLevels[uid];
+    if (forced){                      // المستوى معتمد من ملف القوائم الرسمي
+      forLevel[forced].push({...rec, status: (r.dec==='R' ? 'REPEAT' : 'PROMOTED')});
+    }
+    else if (r.dec === 'R') forLevel[r.lvl].push({...rec, status:'REPEAT'});
     else if (r.dec === 'P') { if (r.lvl<4) forLevel[r.lvl+1].push({...rec, status:'PROMOTED'}); }
   });
   return forLevel;
@@ -898,6 +986,47 @@ function esc(v){
   return String(v)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* يضمن وجود كل مفاتيح الإعدادات — يحمي من النسخ الاحتياطية القديمة */
+function normalizeConfig(){
+  const d = {
+    targetSize1:32, mergeRepeaters1:true,
+    mapping:{2:{},3:{},4:{}},
+    levelMode:{2:'identity',3:'identity',4:'identity'},
+    levelTargetSize:{2:32,3:32,4:32},
+    repMapping:{1:{},2:{},3:{},4:{}},
+    annexOrigins:{1:[],2:[],3:[],4:[]},
+    annexTargets:{1:[],2:[],3:[],4:[]},
+    seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true,
+    optScope:'all',
+    levelOpts:{1:{},2:{},3:{},4:{}}
+  };
+  STATE.config = STATE.config || {};
+  Object.keys(d).forEach(k=>{
+    const dv = d[k];
+    if (STATE.config[k] === undefined || STATE.config[k] === null){
+      STATE.config[k] = (typeof dv==='object') ? JSON.parse(JSON.stringify(dv)) : dv;
+      return;
+    }
+    if (dv && typeof dv==='object' && !Array.isArray(dv)){
+      Object.keys(dv).forEach(sub=>{
+        if (STATE.config[k][sub] === undefined || STATE.config[k][sub] === null){
+          STATE.config[k][sub] = (typeof dv[sub]==='object') ? JSON.parse(JSON.stringify(dv[sub])) : dv[sub];
+        }
+      });
+    }
+  });
+  ['1','2','3','4'].forEach(l=>{
+    if (!STATE.config.levelOpts[l]) STATE.config.levelOpts[l] = {};
+    ['seedTopN','repeaterRotation','genderBalance','avoidSameSection'].forEach(k=>{
+      if (STATE.config.levelOpts[l][k] === undefined) STATE.config.levelOpts[l][k] = true;
+    });
+  });
+  STATE.rosterLevels    = STATE.rosterLevels    || {};
+  STATE.studentExtras   = STATE.studentExtras   || {};
+  STATE.newSectionsCount= STATE.newSectionsCount|| {1:null,2:null,3:null,4:null};
+  STATE._extraSections  = STATE._extraSections  || {1:[],2:[],3:[],4:[]};
 }
 
 function optsFor(lvl){
@@ -1027,9 +1156,23 @@ function getMapping(targetLevel){
   olds.forEach(o => { full[o] = (m[o] !== undefined) ? m[o] : o; });
   return full;
 }
+/* وجهة المعيدين لكل فوج أصلي (افتراضيًا نفس الرقم) */
+function getRepMapping(lvl){
+  const m = (STATE.config.repMapping && STATE.config.repMapping[lvl]) || {};
+  const set = new Set();
+  POOLS[lvl].forEach(s=>{ if (s.status==='REPEAT' && s.originSection!=null) set.add(s.originSection); });
+  const full = {};
+  Array.from(set).sort((a,b)=>a-b).forEach(o=>{ full[o] = (m[o]!==undefined) ? m[o] : o; });
+  return full;
+}
+/* هل هذا الفوج تابع للملحقة؟ */
+function isAnnexTarget(lvl, sec){ return ((STATE.config.annexTargets||{})[lvl]||[]).map(String).includes(String(sec)); }
+function isAnnexOrigin(lvl, sec){ return ((STATE.config.annexOrigins||{})[lvl]||[]).map(String).includes(String(sec)); }
+
 function newSectionKeysFor(targetLevel){
   const m = getMapping(targetLevel);
-  return Array.from(new Set(Object.values(m))).sort((a,b)=>a-b);
+  const rm = getRepMapping(targetLevel);
+  return Array.from(new Set([...Object.values(m), ...Object.values(rm)])).sort((a,b)=>a-b);
 }
 
 function runDistribution(){
@@ -1101,23 +1244,45 @@ function runDistribution(){
       keys = Array.from({length:n}, (_,i)=>i+1);
       ({counts, result} = freshCounts(keys));
       // Seed top promoted students then greedy fill
+      const aKeysR = keys.filter(k=>isAnnexTarget(lvl,k));
+      const mKeysR = keys.filter(k=>!isAnnexTarget(lvl,k));
+      const scope  = s => (aKeysR.length && isAnnexOrigin(lvl, s.originSection)) ? aKeysR : (mKeysR.length?mKeysR:keys);
       const sortedPro = promoted.slice().sort((a,b)=>b.avg-a.avg);
-      if (o.seedTopN && sortedPro.length >= n){
-        const rem = seedTopN(sortedPro, keys, counts, result);
-        greedyAssignInto(rem, keys, counts, result);
+      if (aKeysR.length){
+        greedyAssignInto(sortedPro.filter(s=>isAnnexOrigin(lvl,s.originSection)), aKeysR, counts, result);
+        const mp = sortedPro.filter(s=>!isAnnexOrigin(lvl,s.originSection));
+        const mk = mKeysR.length?mKeysR:keys;
+        if (o.seedTopN && mp.length >= mk.length) greedyAssignInto(seedTopN(mp, mk, counts, result), mk, counts, result);
+        else greedyAssignInto(mp, mk, counts, result);
+      } else if (o.seedTopN && sortedPro.length >= n){
+        greedyAssignInto(seedTopN(sortedPro, keys, counts, result), keys, counts, result);
       } else {
         greedyAssignInto(sortedPro, keys, counts, result);
       }
       // Rotate repeaters
       if (o.repeaterRotation && repeaters.length > 0){
-        rotateRepeaters(repeaters, keys, counts, result, repCounts, o.avoidSameSection);
+        if (aKeysR.length){
+          const aR=repeaters.filter(s=>isAnnexOrigin(lvl,s.originSection));
+          const mR=repeaters.filter(s=>!isAnnexOrigin(lvl,s.originSection));
+          if(aR.length) rotateRepeaters(aR, aKeysR, counts, result, repCounts, o.avoidSameSection);
+          if(mR.length) rotateRepeaters(mR, mKeysR.length?mKeysR:keys, counts, result, repCounts, o.avoidSameSection);
+        } else rotateRepeaters(repeaters, keys, counts, result, repCounts, o.avoidSameSection);
       } else {
-        greedyAssignInto(repeaters.sort((a,b)=>b.avg-a.avg), keys, counts, result);
+        const sorted = repeaters.sort((a,b)=>b.avg-a.avg);
+        if (aKeysR.length){
+          greedyAssignInto(sorted.filter(s=>isAnnexOrigin(lvl,s.originSection)), aKeysR, counts, result);
+          greedyAssignInto(sorted.filter(s=>!isAnnexOrigin(lvl,s.originSection)), mKeysR.length?mKeysR:keys, counts, result);
+        } else greedyAssignInto(sorted, keys, counts, result);
       }
-      if (o.genderBalance) genderBalancePass(keys, counts, result);
+      if (o.genderBalance){
+        if (aKeysR.length>1) genderBalancePass(aKeysR, counts, result);
+        if (mKeysR.length>1) genderBalancePass(mKeysR, counts, result);
+        if (!aKeysR.length)  genderBalancePass(keys, counts, result);
+      }
     } else {
-      // Identity mode: promoted follow mapping, repeaters rotate
+      // وضع التطابق: لكل فوج أصلي وجهة محددة (منتقلون ومعيدون بشكل مستقل)
       const mapping = getMapping(lvl);
+      const repMap  = getRepMapping(lvl);
       keys = newSectionKeysFor(lvl);
       // honour manual "new sections" count in identity mode too
       const manualCount = STATE.newSectionsCount[lvl];
@@ -1130,21 +1295,39 @@ function runDistribution(){
 
       // Place promoted students into their mapped section (identity)
       promoted.forEach(s=>{
-        const dest = mapping[s.originSection];
+        let dest = mapping[s.originSection];
+        if (dest===undefined || !result[dest]){
+          dest = keys.length ? keys[0] : 1;
+          if (!result[dest]){ result[dest]=[]; counts[dest]={total:0,M:0,F:0}; }
+        }
         result[dest].push(s); counts[dest].total++; counts[dest][s.g]++;
       });
 
-      // Rotate repeaters across mapped sections
+      // المعيدون: وجهة خاصة بهم، والتدوير يبقى داخل نطاق الأم أو الملحقة
+      const placeRep = s => {
+        let d = (repMap[s.originSection]!=null) ? repMap[s.originSection] : mapping[s.originSection];
+        if (d===undefined || !result[d]){ d = keys.length?keys[0]:1;
+          if(!result[d]){result[d]=[]; counts[d]={total:0,M:0,F:0};} }
+        result[d].push(s); counts[d].total++; counts[d][s.g]++;
+      };
       if (o.repeaterRotation && repeaters.length > 0){
-        rotateRepeaters(repeaters, keys, counts, result, repCounts, o.avoidSameSection);
+        const aKeys = keys.filter(k=>isAnnexTarget(lvl,k));
+        const mKeys = keys.filter(k=>!isAnnexTarget(lvl,k));
+        const aRep  = repeaters.filter(s=>isAnnexOrigin(lvl, s.originSection));
+        const mRep  = repeaters.filter(s=>!isAnnexOrigin(lvl, s.originSection));
+        if (aRep.length){ aKeys.length ? rotateRepeaters(aRep, aKeys, counts, result, repCounts, o.avoidSameSection) : aRep.forEach(placeRep); }
+        if (mRep.length){ mKeys.length ? rotateRepeaters(mRep, mKeys, counts, result, repCounts, o.avoidSameSection) : mRep.forEach(placeRep); }
       } else {
-        repeaters.forEach(s=>{
-          const dest = mapping[s.originSection];
-          result[dest].push(s); counts[dest].total++; counts[dest][s.g]++;
-        });
+        repeaters.forEach(placeRep);
       }
-      // Light gender balance (only swaps students, not sections)
-      if (o.genderBalance) genderBalancePass(keys, counts, result);
+      // موازنة الجنس داخل كل نطاق على حدة (لا خلط بين الأم والملحقة)
+      if (o.genderBalance){
+        const aK = keys.filter(k=>isAnnexTarget(lvl,k));
+        const mK = keys.filter(k=>!isAnnexTarget(lvl,k));
+        if (aK.length>1) genderBalancePass(aK, counts, result);
+        if (mK.length>1) genderBalancePass(mK, counts, result);
+        if (!aK.length)  genderBalancePass(keys, counts, result);
+      }
     }
     results[lvl] = {sections: result};
   });
@@ -1184,6 +1367,7 @@ function persist(){
         institution: STATE.institution, config: STATE.config, overrides: STATE.overrides,
         genderOverrides: STATE.genderOverrides, deletedUids: STATE.deletedUids, extraSections: STATE._extraSections,
         studentExtras: STATE.studentExtras, hideBranding: STATE.hideBranding, newSectionsCount: STATE.newSectionsCount,
+        rosterLevels: STATE.rosterLevels,
         dbCleared: STATE.dbCleared,
         darkMode: STATE.darkMode
       }), false);
@@ -1203,11 +1387,13 @@ async function restore(){
       const p = JSON.parse(r.value);
       if (p.institution) STATE.institution = Object.assign(STATE.institution, p.institution);
       if (p.config) STATE.config = Object.assign(STATE.config, p.config);
+      normalizeConfig();
       if (p.overrides) STATE.overrides = p.overrides;
       if (p.genderOverrides) STATE.genderOverrides = p.genderOverrides;
       if (p.deletedUids) STATE.deletedUids = p.deletedUids;
       if (p.extraSections) STATE._extraSections = p.extraSections;
       if (p.studentExtras) STATE.studentExtras = p.studentExtras;
+      if (p.rosterLevels) STATE.rosterLevels = p.rosterLevels;
       if (typeof p.hideBranding === 'boolean') STATE.hideBranding = p.hideBranding;
       if (typeof p.dbCleared === 'boolean') STATE.dbCleared = p.dbCleared;
       if (p.newSectionsCount) STATE.newSectionsCount = Object.assign({1:null,2:null,3:null,4:null}, p.newSectionsCount);
@@ -1584,8 +1770,35 @@ function renderLevelMapCard(lvl){
     card.querySelectorAll('.map-input').forEach(inp=>{
       inp.addEventListener('change', e=>{
         const old = Number(e.target.dataset.mapOld);
-        const val = Number(e.target.value)||old;
-        STATE.config.mapping[lvl][old] = val;
+        STATE.config.mapping[lvl][old] = Number(e.target.value)||old;
+        persist(); rerun();
+      });
+    });
+    card.querySelectorAll('.rep-input').forEach(inp=>{
+      inp.addEventListener('change', e=>{
+        const old = Number(e.target.dataset.repOld);
+        normalizeConfig();
+        STATE.config.repMapping[lvl][old] = Number(e.target.value)||old;
+        persist(); rerun();
+      });
+    });
+    card.querySelectorAll('.anx-origin').forEach(cb=>{
+      cb.addEventListener('change', e=>{
+        const o = String(e.target.dataset.anxOld);
+        normalizeConfig();
+        let a = (STATE.config.annexOrigins[lvl]||[]).map(String);
+        a = e.target.checked ? Array.from(new Set([...a,o])) : a.filter(x=>x!==o);
+        STATE.config.annexOrigins[lvl] = a;
+        persist(); rerun();
+      });
+    });
+    card.querySelectorAll('.anx-target').forEach(cb=>{
+      cb.addEventListener('change', e=>{
+        const t = String(e.target.dataset.anxT);
+        normalizeConfig();
+        let a = (STATE.config.annexTargets[lvl]||[]).map(String);
+        a = e.target.checked ? Array.from(new Set([...a,t])) : a.filter(x=>x!==t);
+        STATE.config.annexTargets[lvl] = a;
         persist(); rerun();
       });
     });
@@ -1593,16 +1806,51 @@ function renderLevelMapCard(lvl){
 }
 function renderMappingTable(targetLevel, fromLabel){
   const olds = defaultOldSections(targetLevel);
+  const repOlds = new Set();
+  POOLS[targetLevel].forEach(s=>{ if (s.status==='REPEAT' && s.originSection!=null) repOlds.add(s.originSection); });
+  const allOlds = Array.from(new Set([...olds, ...repOlds])).sort((a,b)=>a-b);
+  const mapP = STATE.config.mapping[targetLevel] || {};
+  const mapR = (STATE.config.repMapping||{})[targetLevel] || {};
+  const annexO = ((STATE.config.annexOrigins||{})[targetLevel]||[]).map(String);
+
   let rows = '';
-  olds.forEach(o=>{
-    const promotedCount = POOLS[targetLevel].filter(s=>s.status==='PROMOTED' && s.originSection===o).length;
-    const repeatCount = POOLS[targetLevel].filter(s=>s.status==='REPEAT' && s.originSection===o).length;
-    const cur = STATE.config.mapping[targetLevel][o] !== undefined ? STATE.config.mapping[targetLevel][o] : o;
-    const tag = repeatCount>0 && promotedCount>0 ? `${promotedCount} منتقل + ${repeatCount} معيد` : (promotedCount>0 ? `${promotedCount} منتقل` : `${repeatCount} معيد`);
-    rows += `<tr><td>فوج ${o} <span style="color:var(--ink-soft); font-size:11px;">(${tag})</span></td><td>←</td>
-      <td><input type="number" min="1" max="40" value="${cur}" data-map-old="${o}" class="map-input"></td></tr>`;
+  allOlds.forEach(o=>{
+    const nP = POOLS[targetLevel].filter(s=>s.status==='PROMOTED' && s.originSection===o).length;
+    const nR = POOLS[targetLevel].filter(s=>s.status==='REPEAT'   && s.originSection===o).length;
+    const vP = mapP[o]!==undefined ? mapP[o] : o;
+    const vR = mapR[o]!==undefined ? mapR[o] : o;
+    const isAnx = annexO.includes(String(o));
+    rows += `<tr class="${isAnx?'anx':''}">
+      <td><b>فوج ${o}</b></td>
+      <td style="font-size:11px;color:var(--ink-soft)">${nP} منتقل</td>
+      <td><input type="number" min="1" max="40" value="${vP}" class="map-input" data-map-old="${o}" ${nP?'':'disabled'}></td>
+      <td style="font-size:11px;color:var(--red)">${nR} معيد</td>
+      <td><input type="number" min="1" max="40" value="${vR}" class="rep-input" data-rep-old="${o}" ${nR?'':'disabled'}></td>
+      <td><input type="checkbox" class="anx-origin" data-anx-old="${o}" ${isAnx?'checked':''} title="هذا الفوج تابع للملحقة"></td>
+    </tr>`;
   });
-  return `<table class="map-table"><tr><th>الفوج الحالي (${fromLabel}/معيدون)</th><th></th><th>الفوج الجديد</th></tr>${rows}</table>`;
+
+  const tKeys = newSectionKeysFor(targetLevel);
+  const annexT = ((STATE.config.annexTargets||{})[targetLevel]||[]).map(String);
+  const tgt = tKeys.map(k=>`<label class="anx-chip ${annexT.includes(String(k))?'on':''}">
+      <input type="checkbox" class="anx-target" data-anx-t="${k}" ${annexT.includes(String(k))?'checked':''}> فوج ${k}
+    </label>`).join('');
+
+  return `
+  <table class="map-table adv">
+    <thead><tr>
+      <th>الفوج الحالي<br><span>(${fromLabel})</span></th>
+      <th colspan="2">↑ وجهة المنتقلين</th>
+      <th colspan="2">🔁 وجهة المعيدين</th>
+      <th>🏫 ملحقة</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="anx-box">
+    <div class="anx-title">🏫 أفواج الملحقة في ${LEVEL_LABEL[targetLevel]} (الوجهة)</div>
+    <div class="anx-hint">حدّد الأفواج الجديدة التابعة للملحقة — لن يُخلط تلاميذها مع المؤسسة الأم في التدوير ولا في موازنة الجنس.</div>
+    <div class="anx-chips">${tgt || '<span style="font-size:12px;color:var(--ink-soft)">لا توجد أفواج بعد</span>'}</div>
+  </div>`;
 }
 
 function decisionBadge(s){
@@ -1750,6 +1998,524 @@ function renderSpecial(){
 }
 
 
+
+
+/* ═══ استيراد «قوائم ما قبل التفويج» — المصدر المعتمد ═══ */
+let _rosterParsed = null, _rosterNotIn = [];
+
+function parseRosterRows(rows){
+  let hi=-1, H={};
+  for (let i=0;i<Math.min(rows.length,30);i++){
+    const j = rows[i].map(x=>String(x||'').trim());
+    const joined = j.join('|');
+    if (joined.includes('رقم تعريف') || (joined.includes('مستوى') && joined.includes('رقم التسجيل'))){
+      hi=i;
+      j.forEach((t,ix)=>{
+        const s=t.replace(/\s+/g,' ').trim();
+        if (/رقم\s*تعريف/.test(s)) H.id=ix;
+        else if (/اسم\s*التلمي/.test(s)) H.name=ix;
+        else if (/تاريخ\s*ميلاد/.test(s)) H.dob=ix;
+        else if (/^مستوى$|المستوى/.test(s)) H.lvl=ix;
+        else if (/رقم\s*الفوج/.test(s)) H.sec=ix;
+        else if (/النظام|^الصفة$/.test(s)) H.reg=ix;
+        else if (/رقم\s*التسجيل/.test(s)) H.mat=ix;
+      });
+      break;
+    }
+  }
+  if (hi<0 || H.id===undefined) return null;
+  const out=[];
+  for (let i=hi+1;i<rows.length;i++){
+    const r=rows[i]; const id=String(r[H.id]||'').trim();
+    if (!id) continue;
+    out.push({ id,
+      name:String(H.name!==undefined?r[H.name]||'':'').trim(),
+      dob: excelDate(H.dob!==undefined?r[H.dob]:''),
+      lvlW:String(H.lvl!==undefined?r[H.lvl]||'':'').trim(),
+      reg: String(H.reg!==undefined?r[H.reg]||'':'').trim(),
+      mat: String(H.mat!==undefined?r[H.mat]||'':'').trim() });
+  }
+  return out;
+}
+
+async function handleRosterFile(file){
+  const el=document.getElementById('rosterReport');
+  el.innerHTML='<div class="alert info">⏳ جارٍ القراءة…</div>';
+  try{
+    if (RAW_DATA.current.length===0 && RAW_DATA.new_arrivals.length===0){
+      el.innerHTML='<div class="alert warn">⚠️ استورد بيانات التلاميذ أو استعد نسخة احتياطية أولًا.</div>'; return; }
+    const buf=await file.arrayBuffer();
+    const rows = bufferStartsWithHtml(buf)
+      ? sheetRowsFromHtml(new TextDecoder('utf-8').decode(buf))
+      : (()=>{const wb=XLSX.read(buf,{type:'array',codepage:1256}); let a=[];
+              wb.SheetNames.forEach(n=>{a=a.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:true}));});
+              return a;})();
+    const list=parseRosterRows(rows);
+    if (!list || !list.length){
+      el.innerHTML='<div class="alert warn">⚠️ تعذّر التعرّف على الأعمدة. المطلوب رأس يحوي «رقم تعريف» و«مستوى» و«رقم التسجيل».</div>'; return; }
+    _rosterParsed=list;
+
+    // فهارس المطابقة: بالرقم، ثم بالاسم+تاريخ الميلاد، ثم بالاسم وحده (مع منع الازدواج)
+    const byId=new Map(), byNameDob=new Map(), byName=new Map();
+    const push=(m,k,v)=>{ if(!k) return; if(!m.has(k)) m.set(k,[]); m.get(k).push(v); };
+    RAW_DATA.current.forEach(r=>{
+      const e={uid:'C-'+r.id, rec:r, cur:true};
+      if (!STATE.deletedUids[e.uid]){
+        byId.set(String(r.id), e);
+        push(byNameDob, normAr(r.ln+' '+r.fn)+'|'+r.dob, e);
+        push(byName,    normAr(r.ln+' '+r.fn), e);
+      }
+    });
+    RAW_DATA.new_arrivals.forEach(r=>{
+      const e={uid:'N-'+r.rank, rec:r, cur:false};
+      if (!STATE.deletedUids[e.uid]){
+        push(byNameDob, normAr(r.ln+' '+r.fn)+'|'+r.dob, e);
+        push(byName,    normAr(r.ln+' '+r.fn), e);
+      }
+    });
+    const usedUid = new Set();
+    const takeFree = arr => { if(!arr) return null; return arr.find(x=>!usedUid.has(x.uid)) || null; };
+
+    let mId=0,mNa=0,mNm=0,none=0,lvlChanged=0;
+    const unmatched=[],changes=[],matDup={};
+    list.forEach(s=>{
+      matDup[s.lvlW+'|'+s.mat]=(matDup[s.lvlW+'|'+s.mat]||0)+1;
+      const lvl=LEVEL_WORD[s.lvlW];
+      const n=normAr(s.name);
+      let hit=byId.get(s.id);
+      if (hit && !usedUid.has(hit.uid)) mId++;
+      else {
+        hit = takeFree(byNameDob.get(n+'|'+s.dob));      // الاسم + تاريخ الميلاد (الأدق)
+        if (hit) { hit.cur ? mNm++ : mNa++; }
+        else {
+          hit = takeFree(byName.get(n));                  // الاسم وحده
+          if (hit) { hit.cur ? mNm++ : mNa++; }
+        }
+      }
+      if (!hit){ none++; if(unmatched.length<10) unmatched.push(s); return; }
+      usedUid.add(hit.uid);
+      s._uid=hit.uid; s._lvl=lvl;
+      if (hit.cur && lvl){
+        const r=hit.rec;
+        const want = r.dec==='R'?r.lvl:(r.dec==='P'&&r.lvl<4?r.lvl+1:null);
+        if (want!==lvl){ lvlChanged++; if(changes.length<15)
+          changes.push({name:s.name, from:(want?LEVEL_LABEL[want]:'مغادر'), to:LEVEL_LABEL[lvl]}); }
+      }
+    });
+    const dupMat=Object.entries(matDup).filter(([,v])=>v>1);
+
+    // ── تلاميذ في قاعدتك ومنتظرون العام القادم لكنهم غائبون عن ملف الرقمنة ──
+    const inRoster = new Set(list.filter(s=>s._uid).map(s=>s._uid));
+    const notInRoster = [];
+    RAW_DATA.current.forEach(r=>{
+      const uid='C-'+r.id;
+      if (STATE.deletedUids[uid] || inRoster.has(uid)) return;
+      const want = r.dec==='R' ? r.lvl : (r.dec==='P'&&r.lvl<4 ? r.lvl+1 : null);
+      if (want===null) return;
+      notInRoster.push({uid, id:String(r.id), name:r.ln+' '+r.fn, dob:r.dob,
+                        want, kind:(r.dec==='R'?'معيد':'منتقل'), sec:r.sec, lvl:r.lvl});
+    });
+    RAW_DATA.new_arrivals.forEach(r=>{
+      const uid='N-'+r.rank;
+      if (STATE.deletedUids[uid] || inRoster.has(uid)) return;
+      notInRoster.push({uid, id:'', name:r.ln+' '+r.fn, dob:r.dob, want:1, kind:'وافد جديد', sec:null, lvl:null});
+    });
+    _rosterNotIn = notInRoster;
+    const box=(cl,n,l)=>`<div class="cmp-box ${cl}"><div class="cb-n">${n}</div><div class="cb-l">${l}</div></div>`;
+
+    let html=`<div class="cmp-grid">
+      ${box('info',list.length,'سطر في الملف')}
+      ${box('ok',mId,'مطابق برقم التعريف')}
+      ${box('ok',mNa,'وافد جديد بالاسم')}
+      ${box(mNm?'warn':'ok',mNm,'مطابق بالاسم فقط')}
+      ${box(none?'bad':'ok',none,'غير مطابق')}
+      ${box(lvlChanged?'warn':'ok',lvlChanged,'مستوى مختلف عن قاعدتك')}
+      ${box(dupMat.length?'warn':'ok',dupMat.length,'أرقام تسجيل مكرّرة')}
+      ${box(notInRoster.length?'bad':'ok',notInRoster.length,'في قاعدتك وغائبون عن الملف')}
+    </div>`;
+    if (notInRoster.length){
+      html+=`<details class="cmp-details" open><summary>🔴 تلاميذ في قاعدتك لم يردوا في ملف الرقمنة (${notInRoster.length}) — سيُحتفظ بهم</summary>
+        <div class="cd-body"><table class="cmp-tb"><thead><tr><th>الاسم</th><th>رقم التعريف</th><th>الحالة</th><th>فوجه الحالي</th><th>المستوى المرتقَب</th></tr></thead><tbody>
+        ${notInRoster.map(m=>`<tr><td><b>${esc(m.name)}</b></td>
+          <td style="font-size:10.5px">${esc(m.id||'—')}</td>
+          <td>${m.kind==='معيد'?'<span class="cmp-tag rep">معيد</span>':m.kind==='وافد جديد'?'<span class="cmp-tag new">وافد جديد</span>':'<span class="cmp-tag pro">منتقل</span>'}</td>
+          <td>${m.sec!=null?('فوج '+esc(m.sec)):'—'}</td>
+          <td><b>${esc(LEVEL_LABEL[m.want])}</b></td></tr>`).join('')}
+        </tbody></table></div>
+        <div style="padding:9px 14px;font-size:12px;color:var(--red);background:#FDF4F2;border-top:1px solid var(--line);">
+          ⚠️ <b>مهم:</b> هؤلاء موجودون في قاعدتك ولهم حق التمدرس، لكنهم لم يَرِدوا في ملف الرقمنة.
+          سيُدرجهم التطبيق في التوزيع حسب مستواهم المستحق — <b>راجع وضعيتهم مع مصلحة الرقمنة</b>.
+        </div></details>`;
+    }
+    if (changes.length) html+=`<details class="cmp-details"><summary>⚠️ سيُعتمد مستواهم من الملف (${lvlChanged})</summary>
+      <div class="cd-body"><table class="cmp-tb"><thead><tr><th>الاسم</th><th>قاعدتك</th><th>الملف (المعتمد)</th></tr></thead><tbody>
+      ${changes.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.from)}</td><td><b style="color:var(--gold)">${esc(x.to)}</b></td></tr>`).join('')}
+      </tbody></table></div></details>`;
+    if (dupMat.length) html+=`<details class="cmp-details"><summary>⚠️ أرقام تسجيل مكرّرة داخل نفس المستوى (${dupMat.length})</summary>
+      <div class="cd-body"><table class="cmp-tb"><thead><tr><th>المستوى</th><th>رقم التسجيل</th><th>العدد</th></tr></thead><tbody>
+      ${dupMat.slice(0,60).map(([k,v])=>{const p=k.split('|');
+        return `<tr><td>${esc(p[0])}</td><td>${esc(p[1])}</td><td><b style="color:var(--red)">${v}</b></td></tr>`;}).join('')}
+      </tbody></table></div><div style="padding:8px 14px;font-size:11.5px;color:var(--ink-soft)">لا يمنع الاعتماد — يُنصح بمراجعته مع مصلحة الرقمنة.</div></details>`;
+    if (unmatched.length) html+=`<details class="cmp-details"><summary>🔴 أسطر لم تُطابَق (${none})</summary>
+      <div class="cd-body"><table class="cmp-tb"><thead><tr><th>الاسم</th><th>رقم التعريف</th><th>المستوى</th></tr></thead><tbody>
+      ${unmatched.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td style="font-size:10.5px">${esc(s.id)}</td><td>${esc(s.lvlW)}</td></tr>`).join('')}
+      </tbody></table></div></details>`;
+
+    html+=`<div class="alert info" style="margin-top:6px;">
+      سيُعتمد: <b>المستوى</b> · <b>رقم التسجيل</b> · <b>النظام (الصفة)</b>.
+      يبقى الفوج الحالي محفوظًا كـ«أصل»، ويُعاد التوزيع حسب إعداداتك في الخريطة المدرسية.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn primary" id="adoptRosterBtn">✓ اعتماد هذا المصدر</button>
+      <button class="btn ghost" id="clearRosterBtn">✕ إلغاء</button></div>`;
+    el.innerHTML=html;
+    document.getElementById('adoptRosterBtn').addEventListener('click', adoptRoster);
+    document.getElementById('clearRosterBtn').addEventListener('click',()=>{
+      _rosterParsed=null; el.innerHTML=''; document.getElementById('fileRoster').value=''; });
+  }catch(e){ el.innerHTML=`<div class="alert warn">⚠️ خطأ في القراءة: ${esc(e.message)}</div>`; }
+}
+
+function adoptRoster(){
+  if (!_rosterParsed) return;
+  let lv=0, mt=0;
+  _rosterParsed.forEach(s=>{
+    if (!s._uid) return;
+    if (s._lvl){ STATE.rosterLevels[s._uid]=s._lvl; lv++; }
+    if (s.mat || s.reg){
+      if (!STATE.studentExtras[s._uid]) STATE.studentExtras[s._uid]={};
+      if (s.mat) STATE.studentExtras[s._uid].matricule=s.mat;
+      if (s.reg) STATE.studentExtras[s._uid].status=s.reg;
+      mt++;
+    }
+  });
+  persist(); rerun();
+  const warn = _rosterNotIn.length
+    ? `<div class="alert warn" style="margin-top:8px;">⚠️ أُضيف أيضًا <b>${_rosterNotIn.length}</b> تلميذ
+        موجود في قاعدتك وغائب عن ملف الرقمنة — راجع وضعيتهم:
+        ${_rosterNotIn.slice(0,6).map(m=>esc(m.name)+' ('+esc(LEVEL_LABEL[m.want])+')').join(' · ')}
+        ${_rosterNotIn.length>6?' …':''}</div>` : '';
+  document.getElementById('rosterReport').innerHTML=
+    `<div class="alert ok"><b>✓ تم اعتماد المصدر.</b><br>
+     ثُبّت المستوى لـ <b>${lv}</b> تلميذ · أُدرج رقم التسجيل والنظام لـ <b>${mt}</b> تلميذ.<br>
+     اضبط الآن وجهات الأفواج وأفواج الملحقة من «الخريطة المدرسية».</div>` + warn;
+  _rosterParsed=null;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   مطابقة ملف توزيع رسمي — قراءة، مقارنة، اعتماد
+═══════════════════════════════════════════════════════════════ */
+const LEVEL_WORD = {'أولى':1,'الأولى':1,'ثانية':2,'الثانية':2,'ثالثة':3,'الثالثة':3,'رابعة':4,'الرابعة':4};
+let _distParsed = null, _distCompare = null;
+
+/* تطبيع عربي للمطابقة بالاسم */
+function normAr(s){
+  return String(s||'').replace(/[\u064B-\u065F\u0670]/g,'')
+    .replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+    .replace(/\s+/g,' ').trim().toLowerCase();
+}
+/* تاريخ Excel التسلسلي → YYYY-MM-DD */
+function excelDate(v){
+  if (v===null||v===undefined||v==='') return '';
+  if (typeof v === 'number'){
+    const d = new Date(Math.round((v-25569)*86400000));
+    return isNaN(d) ? '' : d.toISOString().slice(0,10);
+  }
+  return normDate(v);
+}
+
+/* ── قراءة ملف التوزيع ── */
+function parseDistributionRows(rows){
+  const classes = new Map();     // "lvl-sec" → {lvl,sec,students:[]}
+  const list = [];
+  let cur = null, headIdx = {};
+
+  const titleRe = /قائمة\s+التلاميذ.*?(أولى|الأولى|ثانية|الثانية|ثالثة|الثالثة|رابعة|الرابعة)\s*متوسط\s*0?(\d+)/;
+
+  rows.forEach(r=>{
+    const joined = r.map(x=>String(x||'')).join(' ');
+    const m = joined.match(titleRe);
+    if (m){
+      const lvl = LEVEL_WORD[m[1]], sec = parseInt(m[2],10);
+      const key = lvl+'-'+sec;
+      if (!classes.has(key)) classes.set(key, {lvl, sec, students:[]});
+      cur = classes.get(key);
+      return;
+    }
+    // سطر رؤوس الأعمدة
+    if (joined.includes('اللقب') && (joined.includes('الاسم')||joined.includes('رقم التعريف'))){
+      headIdx = {};
+      r.forEach((h,ix)=>{
+        const t = String(h||'').trim();
+        if (t.includes('رقم التعريف')) headIdx.id = ix;
+        else if (t==='اللقب') headIdx.ln = ix;
+        else if (t==='الاسم') headIdx.fn = ix;
+        else if (t.includes('الجنس')) headIdx.g = ix;
+        else if (t.includes('تاريخ الميلاد')) headIdx.dob = ix;
+        else if (t.includes('الإعادة')||t==='معيد') headIdx.rep = ix;
+        else if (t==='الصفة') headIdx.st = ix;
+      });
+      return;
+    }
+    if (!cur) return;
+    const idv = headIdx.id!=null ? r[headIdx.id] : null;
+    const lnv = headIdx.ln!=null ? r[headIdx.ln] : null;
+    if (!idv && !lnv) return;
+    if (typeof r[0] !== 'number' && !idv) return;
+
+    const rec = {
+      id:  String(idv||'').trim(),
+      ln:  String(lnv||'').trim(),
+      fn:  String(headIdx.fn!=null ? r[headIdx.fn]||'' : '').trim(),
+      g:   String(headIdx.g!=null ? r[headIdx.g]||'' : '').trim(),
+      dob: excelDate(headIdx.dob!=null ? r[headIdx.dob] : ''),
+      rep: String(headIdx.rep!=null ? r[headIdx.rep]||'' : '').trim(),
+      st:  String(headIdx.st!=null ? r[headIdx.st]||'' : '').trim(),
+      lvl: cur.lvl, sec: cur.sec
+    };
+    if (!rec.ln && !rec.id) return;
+    cur.students.push(rec); list.push(rec);
+  });
+
+  // اكتشاف التكرار
+  const seen = new Map(), duplicates = [];
+  list.forEach(s=>{
+    if (!s.id) return;
+    if (seen.has(s.id)){ duplicates.push([seen.get(s.id), s]); }
+    else seen.set(s.id, s);
+  });
+
+  return {classes, list, duplicates};
+}
+
+/* ── المقارنة مع قاعدة البيانات ── */
+function compareDistribution(parsed){
+  const fileById   = new Map();
+  const fileByName = new Map();
+  parsed.list.forEach(s=>{
+    if (s.id) fileById.set(s.id, s);
+    const n = normAr(s.ln+' '+s.fn);
+    if (n) { if(!fileByName.has(n)) fileByName.set(n, []); fileByName.get(n).push(s); }
+  });
+
+  const expected = [];
+  RAW_DATA.current.forEach(r=>{
+    const uid = 'C-'+r.id;
+    if (STATE.deletedUids[uid]) return;
+    let want = null;
+    if (r.dec==='R') want = r.lvl;
+    else if (r.dec==='P' && r.lvl<4) want = r.lvl+1;
+    if (want===null) return;
+    expected.push({uid, id:String(r.id), name:r.ln+' '+r.fn, dob:r.dob,
+                   g:r.g, want, kind:(r.dec==='R'?'REPEAT':'PROMOTED')});
+  });
+  RAW_DATA.new_arrivals.forEach(r=>{
+    const uid = 'N-'+r.rank;
+    if (STATE.deletedUids[uid]) return;
+    expected.push({uid, id:'', name:r.ln+' '+r.fn, dob:r.dob,
+                   g:r.g, want:1, kind:'NEW'});
+  });
+
+  const matchedById=[], matchedByName=[], missing=[];
+  const usedFile = new Set();
+
+  expected.forEach(e=>{
+    if (e.id && fileById.has(e.id)){
+      const f = fileById.get(e.id);
+      usedFile.add(f); e.file=f; matchedById.push(e); return;
+    }
+    const n = normAr(e.name);
+    const cands = fileByName.get(n);
+    if (cands && cands.length){
+      const f = cands.find(x=>!usedFile.has(x)) || cands[0];
+      usedFile.add(f); e.file=f; matchedByName.push(e); return;
+    }
+    missing.push(e);
+  });
+
+  const extra = parsed.list.filter(s=>!usedFile.has(s));
+
+  // الموجودون في الملف رغم قرار المغادرة
+  const leavingIds = new Set();
+  RAW_DATA.current.forEach(r=>{ if (r.dec==='L'||r.dec==='V') leavingIds.add(String(r.id)); });
+  const leavingInFile = parsed.list.filter(s=>s.id && leavingIds.has(s.id));
+
+  return {matchedById, matchedByName, missing, extra, leavingInFile,
+          duplicates:parsed.duplicates, total:parsed.list.length, expected:expected.length};
+}
+
+/* ── عرض التقرير ── */
+function renderDistReport(){
+  const el = document.getElementById('distCompareReport');
+  if (!_distCompare){ el.innerHTML=''; return; }
+  const R = _distCompare;
+  const sections = [..._distParsed.classes.values()].length;
+
+  const box = (cls,n,l) => `<div class="cmp-box ${cls}"><div class="cb-n">${n}</div><div class="cb-l">${l}</div></div>`;
+
+  const tbl = (rows, cols) => `<table class="cmp-tb"><thead><tr>${cols.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+  const kindTag = k => k==='REPEAT' ? '<span class="cmp-tag rep">معيد</span>'
+                     : k==='NEW' ? '<span class="cmp-tag new">وافد جديد</span>'
+                     : '<span class="cmp-tag pro">منتقل</span>';
+
+  let html = `<div class="cmp-grid">
+    ${box('info', R.total, 'تلميذ في الملف')}
+    ${box('info', sections, 'قسم في الملف')}
+    ${box('ok',   R.matchedById.length, 'مطابقون برقم التعريف')}
+    ${box(R.matchedByName.length?'warn':'ok', R.matchedByName.length, 'مطابقون بالاسم فقط')}
+    ${box(R.missing.length?'bad':'ok', R.missing.length, 'ناقصون من الملف')}
+    ${box(R.duplicates.length?'bad':'ok', R.duplicates.length, 'أرقام مكرّرة')}
+    ${box(R.extra.length?'warn':'ok', R.extra.length, 'زائدون غير معروفين')}
+    ${box(R.leavingInFile.length?'warn':'ok', R.leavingInFile.length, 'مغادرون مدرَجون')}
+  </div>`;
+
+  if (R.missing.length){
+    html += `<details class="cmp-details" open><summary>🔴 تلاميذ في قاعدتك وغائبون عن الملف (${R.missing.length}) — سيُدرجون تلقائيًا</summary>
+      <div class="cd-body">${tbl(R.missing.map(m=>`<tr>
+        <td><b>${esc(m.name)}</b></td><td style="font-size:10.5px;color:var(--ink-soft)">${esc(m.id||'—')}</td>
+        <td>${kindTag(m.kind)}</td><td>${LEVEL_LABEL[m.want]}</td></tr>`).join(''),
+        ['الاسم','رقم التعريف','الحالة','المستوى المرتقَب'])}</div></details>`;
+  }
+  if (R.duplicates.length){
+    html += `<details class="cmp-details"><summary>⚠️ أرقام تعريف مكرّرة في الملف (${R.duplicates.length})</summary>
+      <div class="cd-body">${tbl(R.duplicates.map(([a,b])=>`<tr>
+        <td style="font-size:10.5px">${esc(a.id)}</td>
+        <td><b>${esc(a.ln+' '+a.fn)}</b> → ${a.lvl}م${a.sec}</td>
+        <td><b>${esc(b.ln+' '+b.fn)}</b> → ${b.lvl}م${b.sec}</td></tr>`).join(''),
+        ['رقم التعريف','التلميذ الأول','التلميذ الثاني'])}</div></details>`;
+  }
+  if (R.matchedByName.length){
+    html += `<details class="cmp-details"><summary>⚠️ مطابقون بالاسم لكن رقم التعريف مختلف (${R.matchedByName.length})</summary>
+      <div class="cd-body">${tbl(R.matchedByName.map(m=>`<tr>
+        <td><b>${esc(m.name)}</b></td>
+        <td style="font-size:10.5px">${esc(m.id||'—')}</td>
+        <td style="font-size:10.5px">${esc(m.file.id||'—')}</td>
+        <td>${m.file.lvl}م${m.file.sec}</td></tr>`).join(''),
+        ['الاسم','الرقم في قاعدتك','الرقم في الملف','القسم'])}</div></details>`;
+  }
+  if (R.leavingInFile.length){
+    html += `<details class="cmp-details"><summary>⚠️ مدرَجون في الملف رغم قرار المغادرة (${R.leavingInFile.length})</summary>
+      <div class="cd-body">${tbl(R.leavingInFile.map(s=>`<tr>
+        <td><b>${esc(s.ln+' '+s.fn)}</b></td><td style="font-size:10.5px">${esc(s.id)}</td>
+        <td>${s.lvl}م${s.sec}</td></tr>`).join(''), ['الاسم','رقم التعريف','القسم في الملف'])}</div></details>`;
+  }
+  if (R.extra.length){
+    html += `<details class="cmp-details"><summary>🟠 في الملف ولم يُطابَقوا بقاعدتك (${R.extra.length})</summary>
+      <div class="cd-body">${tbl(R.extra.slice(0,300).map(s=>`<tr>
+        <td><b>${esc(s.ln+' '+s.fn)}</b></td><td style="font-size:10.5px">${esc(s.id||'—')}</td>
+        <td>${s.lvl}م${s.sec}</td></tr>`).join(''), ['الاسم','رقم التعريف','القسم'])}</div></details>`;
+  }
+
+  html += `<div class="alert info" style="margin-top:6px;">
+    عند الاعتماد: يأخذ التطبيق <b>توزيع الملف كما هو</b>، ويُدرج الناقصين
+    (${R.missing.length}) في الأقسام <b>الأقل عددًا</b> من مستواهم مع مراعاة توازن الجنس.
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="btn primary" id="adoptDistBtn">✓ اعتماد توزيع الملف وإدراج الناقصين</button>
+    <button class="btn ghost" id="clearDistBtn">✕ إلغاء</button>
+  </div>`;
+
+  el.innerHTML = html;
+  document.getElementById('adoptDistBtn').addEventListener('click', adoptDistribution);
+  document.getElementById('clearDistBtn').addEventListener('click', ()=>{
+    _distParsed=null; _distCompare=null; renderDistReport();
+    document.getElementById('fileDistCompare').value='';
+  });
+}
+
+/* ── اعتماد التوزيع ── */
+function adoptDistribution(){
+  if (!_distParsed || !_distCompare) return;
+  const R = _distCompare;
+
+  // فهرس سريع: سجلّ التلميذ من uid
+  const poolByUid = new Map();
+  rebuildPools();
+  [1,2,3,4].forEach(l=> POOLS[l].forEach(s=> poolByUid.set(s.uid, s)));
+
+  // ابنِ النتائج من أقسام الملف
+  const results = {1:{sections:{}},2:{sections:{}},3:{sections:{}},4:{sections:{}}};
+  _distParsed.classes.forEach(cl=>{ results[cl.lvl].sections[cl.sec] = []; });
+
+  const placed = new Set();
+  R.matchedById.concat(R.matchedByName).forEach(m=>{
+    const rec = poolByUid.get(m.uid);
+    if (!rec) return;
+    const lvl = m.file.lvl, sec = m.file.sec;
+    if (!results[lvl].sections[sec]) results[lvl].sections[sec] = [];
+    results[lvl].sections[sec].push(rec);
+    placed.add(m.uid);
+  });
+
+  // أدرج الناقصين في الأقسام الأقل عددًا من مستواهم
+  let inserted = 0;
+  R.missing.forEach(m=>{
+    const rec = poolByUid.get(m.uid);
+    if (!rec || placed.has(m.uid)) return;
+    const lvl = m.want;
+    let keys = Object.keys(results[lvl].sections);
+    if (!keys.length){ results[lvl].sections[1] = []; keys = ['1']; }
+    let best = null, bestScore = Infinity;
+    keys.forEach(k=>{
+      const arr = results[lvl].sections[k];
+      const same = arr.filter(x=>x.g===rec.g).length;
+      const score = arr.length*100 + same;
+      if (score < bestScore){ bestScore = score; best = k; }
+    });
+    results[lvl].sections[best].push(rec);
+    placed.add(m.uid);
+    inserted++;
+  });
+
+  STATE.results = results;
+  STATE.overrides = {};
+  STATE._extraSections = {1:[],2:[],3:[],4:[]};
+  Object.keys(results).forEach(l=>{
+    STATE._extraSections[l] = Object.keys(results[l].sections).map(Number);
+  });
+  STATE.activeSubTab = {1:null,2:null,3:null,4:null};
+  persist();
+  renderAll();
+
+  const el = document.getElementById('distCompareReport');
+  el.innerHTML = `<div class="alert ok">
+    <b>✓ تم اعتماد توزيع الملف.</b><br>
+    طوبق ${R.matchedById.length + R.matchedByName.length} تلميذ ·
+    أُدرج <b>${inserted}</b> تلميذ ناقص في الأقسام الأقل عددًا.<br>
+    راجع النتيجة من صفحات المستويات، ثم صدّر القوائم النهائية.
+  </div>`;
+  _distParsed=null; _distCompare=null;
+  document.querySelector('[data-panel="lvl1"]').click();
+}
+
+/* ── قراءة الملف المرفوع ── */
+async function handleDistCompareFile(file){
+  const el = document.getElementById('distCompareReport');
+  el.innerHTML = '<div class="alert info">⏳ جارٍ قراءة الملف ومقارنته…</div>';
+  try{
+    if (RAW_DATA.current.length===0 && RAW_DATA.new_arrivals.length===0){
+      el.innerHTML = '<div class="alert warn">⚠️ لا توجد بيانات في التطبيق للمقارنة. استورد بياناتك أو استعد نسخة احتياطية أولًا.</div>';
+      return;
+    }
+    const buf = await file.arrayBuffer();
+    const rows = bufferStartsWithHtml(buf)
+      ? sheetRowsFromHtml(new TextDecoder('utf-8').decode(buf))
+      : (()=>{ const wb = XLSX.read(buf,{type:'array', codepage:1256});
+               let all=[]; wb.SheetNames.forEach(n=>{
+                 all = all.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:true}));
+               }); return all; })();
+
+    _distParsed = parseDistributionRows(rows);
+    if (!_distParsed.list.length){
+      el.innerHTML = '<div class="alert warn">⚠️ تعذّر التعرّف على قوائم داخل هذا الملف. تأكد أنه ملف قوائم أقسام يحتوي عناوين مثل «قائمة التلاميذ للسنة: أولى متوسط 01».</div>';
+      _distParsed=null; return;
+    }
+    _distCompare = compareDistribution(_distParsed);
+    renderDistReport();
+  }catch(e){
+    el.innerHTML = `<div class="alert warn">⚠️ خطأ في قراءة الملف: ${esc(e.message)}</div>`;
+    _distParsed=null; _distCompare=null;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    PDF EXPORT — عبر نافذة طباعة مصمَّمة (دعم عربي كامل RTL)
 ═══════════════════════════════════════════════════════════════ */
@@ -1789,6 +2555,7 @@ function pdfClassPage(lvl, sec, students){
     const cls = s.avg!=null ? (s.avg>=10?'avg-ok':'avg-no') : '';
     return `<tr>
       <td>${i+1}</td>
+      <td style="font-size:9.5px">${esc(ex.matricule||'')}</td>
       <td class="c-name">${esc(s.name)}</td>
       <td>${s.g==='M'?'ذكر':'أنثى'}</td>
       <td>${esc(s.dob)}</td>
@@ -1808,9 +2575,9 @@ function pdfClassPage(lvl, sec, students){
     </div>
     <table class="pdf-tb">
       <thead><tr>
-        <th style="width:5%">الرقم</th><th style="width:24%">الاسم</th><th style="width:7%">الجنس</th>
-        <th style="width:11%">الميلاد</th><th style="width:11%">الحالة</th><th style="width:16%">الأصل</th>
-        <th style="width:8%">المعدل</th><th style="width:9%">الصفة</th><th style="width:9%">ملاحظات</th>
+        <th style="width:4%">الرقم</th><th style="width:9%">رقم التسجيل</th><th style="width:20%">الاسم</th>
+        <th style="width:6%">الجنس</th><th style="width:10%">الميلاد</th><th style="width:10%">الحالة</th>
+        <th style="width:14%">الأصل</th><th style="width:7%">المعدل</th><th style="width:9%">الصفة</th><th style="width:9%">ملاحظات</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
@@ -2039,7 +2806,7 @@ function tally(list){
 /* ── ورقة قسم واحد ── */
 /* ═══ ورقة قسم — بنفس شكل العرض داخل التطبيق ═══ */
 function buildOfficialClassSheet(lvl, sec, students){
-  const COLS = 9;
+  const COLS = 10;
   const t = tally(students);
   const male = students.filter(s=>s.g==='M').length;
   const female = students.length - male;
@@ -2050,7 +2817,7 @@ function buildOfficialClassSheet(lvl, sec, students){
   const rows = officialHeader(COLS, bar);
 
   const HEAD_R = rows.length;
-  rows.push(['الرقم','الاسم','الجنس','الميلاد','الحالة','الأصل','المعدل','الصفة','ملاحظات']);
+  rows.push(['الرقم','رقم التسجيل','الاسم','الجنس','الميلاد','الحالة','الأصل','المعدل','الصفة','ملاحظات']);
 
   // ترتيب تنازلي بالمعدل — كما يظهر في التطبيق
   const sorted = students.slice().sort((a,b)=> (b.avg||0)-(a.avg||0));
@@ -2061,7 +2828,7 @@ function buildOfficialClassSheet(lvl, sec, students){
 
   sorted.forEach((s,i)=>{
     const ex = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
-    rows.push([ i+1, s.name, s.g==='M'?'ذكر':'أنثى', s.dob,
+    rows.push([ i+1, ex.matricule||'', s.name, s.g==='M'?'ذكر':'أنثى', s.dob,
                 statusOf(s), originOf(s),
                 s.avg!=null ? Number(s.avg.toFixed(2)) : '',
                 ex.status||'', ex.notes||'' ]);
@@ -2070,19 +2837,19 @@ function buildOfficialClassSheet(lvl, sec, students){
 
   rows.push([]);
   const TAL_R = rows.length;
-  rows.push(['','','','المجموع','خارجي','ن داخلي','داخلي','معيدون','جدد']);
-  rows.push(['','','الذكور',  t.totM,'','','', t.repM, t.newM]);
-  rows.push(['','','الإناث',  t.totF,'','','', t.repF, t.newF]);
-  rows.push(['','','المجموع', t.total,'','','', t.repT, t.newT]);
+  rows.push(['','','','','المجموع','خارجي','ن داخلي','داخلي','معيدون','جدد']);
+  rows.push(['','','','الذكور',  t.totM,'','','', t.repM, t.newM]);
+  rows.push(['','','','الإناث',  t.totF,'','','', t.repF, t.newF]);
+  rows.push(['','','','المجموع', t.total,'','','', t.repT, t.newT]);
   rows.push([]);
   const DATE_R = rows.length;
   rows.push([(STATE.institution.directorate||'') + ' في: ' + new Date().toISOString().slice(0,10)]);
   rows.push([]);
   const SIG_R = rows.length;
-  rows.push(['إمضاء مستشار التربية','','','إمضاء الناظر','','','إمضاء المديرية','','']);
+  rows.push(['إمضاء مستشار التربية','','','إمضاء الناظر','','','إمضاء المديرية','','','']);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:30},{wch:8},{wch:13},{wch:12},{wch:24},{wch:9},{wch:13},{wch:20}];
+  ws['!cols'] = [{wch:6},{wch:11},{wch:30},{wch:8},{wch:13},{wch:12},{wch:24},{wch:9},{wch:13},{wch:20}];
   ws['!rows'] = []; ws['!rows'][5]={hpt:28}; ws['!rows'][HEAD_R]={hpt:22};
 
   if (styleSupported()){
@@ -2111,10 +2878,10 @@ function buildOfficialClassSheet(lvl, sec, students){
       const zebra = ((r-D0)%2===1);
       const bgRow = zebra ? 'FAF8F0' : XS.white;
       for (let col=0; col<COLS; col++){
-        const isName = (col===1);
+        const isName = (col===2);
         setStyle(ws, r, col, {
           font:{sz:11, bold:isName, color:{rgb: isName?'1E2A22':'44514A'}},
-          alignment:{horizontal: (isName||col===5||col===8)?'right':'center', vertical:'center'},
+          alignment:{horizontal: (isName||col===6||col===9)?'right':'center', vertical:'center'},
           border:{bottom:{style:'thin',color:{rgb:'E3DDCB'}},
                   left:{style:'hair',color:{rgb:'EDE8DA'}},
                   right:{style:'hair',color:{rgb:'EDE8DA'}}},
@@ -2122,19 +2889,19 @@ function buildOfficialClassSheet(lvl, sec, students){
         });
       }
       // شارة الحالة
-      const stRef = XLSX.utils.encode_cell({r, c:4});
+      const stRef = XLSX.utils.encode_cell({r, c:5});
       const b = ws[stRef] && BADGE[ws[stRef].v];
-      if (b) setStyle(ws, r, 4, {
+      if (b) setStyle(ws, r, 5, {
         font:{sz:10.5, bold:true, color:{rgb:b.fg}},
         fill:{fgColor:{rgb:b.bg}},
         alignment:{horizontal:'center', vertical:'center'},
         border:{bottom:{style:'thin',color:{rgb:'E3DDCB'}}}
       });
       // المعدل — أخضر إن ≥10 وأحمر إن أقل
-      const avRef = XLSX.utils.encode_cell({r, c:6});
+      const avRef = XLSX.utils.encode_cell({r, c:7});
       if (ws[avRef] && typeof ws[avRef].v === 'number'){
         ws[avRef].z = '0.00';
-        setStyle(ws, r, 6, {
+        setStyle(ws, r, 7, {
           font:{sz:11, bold:true, color:{rgb: ws[avRef].v>=10 ? '2F5233' : '9C3D32'}},
           alignment:{horizontal:'center', vertical:'center'},
           border:{bottom:{style:'thin',color:{rgb:'E3DDCB'}}},
@@ -2142,17 +2909,17 @@ function buildOfficialClassSheet(lvl, sec, students){
         });
       }
       // الأصل — رمادي خفيف كالتطبيق
-      setStyle(ws, r, 5, {font:{sz:10, color:{rgb:'7A867C'}},
+      setStyle(ws, r, 6, {font:{sz:10, color:{rgb:'7A867C'}},
         alignment:{horizontal:'right',vertical:'center'},
         border:{bottom:{style:'thin',color:{rgb:'E3DDCB'}}}, fill:{fgColor:{rgb:bgRow}}});
     }
 
     // جدول التعداد
-    styleRow(ws, TAL_R, 2, 8, {font:{bold:true,sz:11,color:{rgb:XS.white}},
+    styleRow(ws, TAL_R, 3, 9, {font:{bold:true,sz:11,color:{rgb:XS.white}},
       fill:{fgColor:{rgb:XS.head}}, alignment:C, border:bd('thin')});
     for (let r=TAL_R+1; r<=TAL_R+3; r++){
       const last = (r===TAL_R+3);
-      styleRow(ws, r, 2, 8, {font:{bold:last,sz:11}, alignment:C, border:bd('thin'),
+      styleRow(ws, r, 3, 9, {font:{bold:last,sz:11}, alignment:C, border:bd('thin'),
         fill:{fgColor:{rgb: last ? XS.goldSoft : XS.grey}}});
     }
 
@@ -2162,7 +2929,7 @@ function buildOfficialClassSheet(lvl, sec, students){
       {font:{bold:true,sz:11,color:{rgb:XS.green}}, alignment:C}));
     merges.push({s:{r:SIG_R,c:0},e:{r:SIG_R,c:2}});
     merges.push({s:{r:SIG_R,c:3},e:{r:SIG_R,c:5}});
-    merges.push({s:{r:SIG_R,c:6},e:{r:SIG_R,c:8}});
+    merges.push({s:{r:SIG_R,c:6},e:{r:SIG_R,c:9}});
 
     ws['!merges'] = merges;
     ws['!freeze'] = {xSplit:0, ySplit:HEAD_R+1};
@@ -2671,6 +3438,7 @@ function buildBackupSnapshot(){
     deletedUids: STATE.deletedUids,
     extraSections: STATE._extraSections,
     studentExtras: STATE.studentExtras,
+    rosterLevels: STATE.rosterLevels,
     hideBranding: STATE.hideBranding,
     newSectionsCount: STATE.newSectionsCount,
     darkMode: STATE.darkMode
@@ -2702,12 +3470,14 @@ async function restoreBackup(file){
     RAW_DATA = snapshot.raw_data;
     STATE.dbCleared = false;
     STATE.institution = Object.assign({}, DEFAULT_INSTITUTION, snapshot.institution||{});
-    STATE.config = Object.assign({targetSize1:32, mergeRepeaters1:true, mapping:{2:{},3:{},4:{}}, levelMode:{2:'identity',3:'identity',4:'identity'}, levelTargetSize:{2:32,3:32,4:32}}, snapshot.config||{});
+    STATE.config = Object.assign({}, STATE.config, snapshot.config||{});
+    normalizeConfig();
     STATE.overrides = snapshot.overrides || {};
     STATE.genderOverrides = snapshot.genderOverrides || {};
     STATE.deletedUids = snapshot.deletedUids || {};
     STATE._extraSections = snapshot.extraSections || {1:[],2:[],3:[],4:[]};
     STATE.studentExtras = snapshot.studentExtras || {};
+    STATE.rosterLevels = snapshot.rosterLevels || {};
     STATE.hideBranding = !!snapshot.hideBranding;
     STATE.newSectionsCount = Object.assign({1:null,2:null,3:null,4:null}, snapshot.newSectionsCount||{});
     if (typeof snapshot.darkMode === 'boolean'){ STATE.darkMode = snapshot.darkMode; applyDarkMode(); }
@@ -3942,6 +4712,8 @@ document.getElementById('optMatrixBody').addEventListener('change', e=>{
 document.getElementById('fileCurrent').addEventListener('change', e=>{ if (e.target.files.length) handleCurrentFiles(Array.from(e.target.files)); });
 document.getElementById('fileNewArr').addEventListener('change', e=>{ if (e.target.files.length) handleNewArrivalsFile(e.target.files[0]); });
 document.getElementById('fileLvl4Decisions').addEventListener('change', e=>{ if (e.target.files.length) handleLvl4DecisionsFile(e.target.files[0]); });
+document.getElementById('fileDistCompare').addEventListener('change', e=>{ if (e.target.files.length) handleDistCompareFile(e.target.files[0]); });
+document.getElementById('fileRoster').addEventListener('change', e=>{ if (e.target.files.length) handleRosterFile(e.target.files[0]); });
 document.getElementById('downloadTemplate4').addEventListener('click', downloadLvl4Template);
 document.getElementById('applyImport').addEventListener('click', applyImportedData);
 document.getElementById('resetToDemo').addEventListener('click', ()=>{ if (confirm('سيتم استبدال البيانات الحالية ببيانات العرض التجريبي. متابعة؟')) resetToDemo(); });
@@ -4010,6 +4782,7 @@ document.getElementById('overview-stats').addEventListener('click', function(e){
 
 (async function init(){
   await restore();
+  normalizeConfig();
   applyDarkMode();
   rebuildPools();
   runDistribution();
