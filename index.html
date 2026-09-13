@@ -543,6 +543,7 @@ if (typeof XLSX === 'undefined') {
       <div class="brand-text">DONIA SMART CLASSE<small>توزيع الأقسام الذكي</small></div>
     </div>
     <div class="inst-subline" id="sidebarSchoolName">السنة الدراسية 2026/2027</div>
+    <div class="inst-subline" id="appVersionTag" style="opacity:.6; font-size:10px;">جارٍ التحقق من الإصدار…</div>
 
     <div class="dark-toggle-row">
       <span class="dt-icon" id="dtIconSun">☀️</span>
@@ -5330,7 +5331,38 @@ if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
 }
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{ /* manifest/sw not present in this context (e.g. local single-file preview) — safe to ignore */ });
+    // updateViaCache:'none' يمنع المتصفح من تخزين sw.js نفسه في ذاكرة HTTP —
+    // بدونها قد يبقى المتصفح يخدم كود service-worker قديم لساعات حتى مع رفع نسخة جديدة
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+      // تحقّق فوري من وجود نسخة أحدث من sw.js عند كل تحميل
+      reg.update().catch(()=>{});
+      // وتحقّق دوري كل 60 ثانية طالما الصفحة مفتوحة (يفيد المستخدمين الذين يتركون التبويب مفتوحًا طويلًا)
+      setInterval(() => reg.update().catch(()=>{}), 60000);
+
+      let refreshedOnce = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // بمجرد أن تتولى نسخة sw.js الجديدة التحكم، أعِد تحميل الصفحة تلقائيًا
+        // ليرى المستخدم آخر تحديث فورًا بلا حاجة لتفريغ الذاكرة يدويًا
+        if (refreshedOnce) return;
+        refreshedOnce = true;
+        location.reload();
+      });
+
+      // اعرض رقم النسخة النشطة فعليًا (وليس فقط ما هو مكتوب في الكود) — يفيد عند تشخيص مشاكل التخزين المؤقت لاحقًا
+      const showVersion = sw => {
+        if (!sw) return;
+        const chan = new MessageChannel();
+        chan.port1.onmessage = ev => {
+          if (ev.data && ev.data.type === 'SW_VERSION') {
+            const tag = document.getElementById('appVersionTag');
+            if (tag) tag.textContent = 'الإصدار المُفعَّل: ' + ev.data.version;
+          }
+        };
+        sw.postMessage({ type: 'GET_VERSION' }, [chan.port2]);
+      };
+      showVersion(navigator.serviceWorker.controller);
+      navigator.serviceWorker.addEventListener('controllerchange', () => showVersion(navigator.serviceWorker.controller));
+    }).catch(()=>{ /* manifest/sw not present in this context (e.g. local single-file preview) — safe to ignore */ });
   });
 }
 
