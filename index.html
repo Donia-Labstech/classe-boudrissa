@@ -300,6 +300,19 @@ if (typeof XLSX === 'undefined') {
 
 
 
+
+  /* ═══ SCHOOL → SECTIONS ═══ */
+  .sch-row{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--line);}
+  .sch-row:last-child{border-bottom:none;}
+  .sch-name{font-size:12.5px; font-weight:700; color:var(--heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sch-name span{font-weight:500; color:var(--ink-soft); font-size:11px;}
+  .sch-chips{display:flex; flex-wrap:wrap; gap:4px; max-width:440px;}
+  .sch-chip{display:inline-flex; align-items:center; gap:3px; font-size:11.5px; font-weight:600;
+    border:1px solid var(--line); background:var(--paper-2); border-radius:7px; padding:2px 7px; cursor:pointer;}
+  .sch-chip.on{border-color:var(--gold); background:var(--gold-soft); color:#6B4B0E;}
+  .sch-chip input{margin:0; width:12px; height:12px; accent-color:var(--gold); cursor:pointer;}
+
   /* ═══ ADVANCED MAPPING + ANNEX ═══ */
   table.map-table.adv thead th{text-align:center; font-size:11px; padding:7px 6px;
     background:var(--th-bg); border-bottom:2px solid var(--green); color:var(--heading); font-weight:700;}
@@ -636,6 +649,11 @@ if (typeof XLSX === 'undefined') {
               <div class="lbl-sub">يُجبر التدوير على اختيار قسم مختلف — لتجديد البيئة الاجتماعية للمعيد</div></div>
             </div>
             <div class="toggle-row" style="padding:5px 0; border-top:1px dashed var(--line); margin-top:6px;">
+              <div class="switch"><input type="checkbox" id="optKeepIdentity"><div class="track"><div class="knob"></div></div></div>
+              <div><div class="lbl-main">➡️ الانتقال بنفس رقم الفوج (1م1 ← 2م1)</div>
+              <div class="lbl-sub">تلاميذ الفوج 1 ينتقلون للفوج 1 في المستوى الموالي، والفوج 2 للفوج 2… دون تدوير</div></div>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
               <div class="switch"><input type="checkbox" id="optGenderBalance"><div class="track"><div class="knob"></div></div></div>
               <div><div class="lbl-main">⚖️ موازنة صارمة للجنس بعد التوزيع</div>
               <div class="lbl-sub">تمريرة ثانية تُبادل التلاميذ بين الأقسام لتقليل الفرق ذكور/إناث</div></div>
@@ -662,6 +680,15 @@ if (typeof XLSX === 'undefined') {
           </div>
 
           <div id="distPreview" class="alert info" style="margin-top:12px; font-size:12px; display:none;"></div>
+        </div>
+
+        <div style="border:1px solid var(--gold); border-radius:9px; padding:14px 16px; margin-top:12px; background:#FFFDF6;">
+          <div style="font-family:'El Messiri',sans-serif; font-weight:700; font-size:14px; color:var(--heading);">🏫 توجيه الابتدائيات إلى أفواج محددة</div>
+          <div class="hint" style="margin:5px 0 10px;">
+            لكل ابتدائية: حدّد الأفواج التي يُوزَّع عليها تلاميذها في السنة الأولى.
+            اتركها فارغة ليُوزَّعوا على كل الأفواج. مفيد لتلاميذ الملحقة أو الابتدائيات البعيدة.
+          </div>
+          <div id="schoolSecList"></div>
         </div>
       </div>
       <div class="card" id="mapping-card-2"></div>
@@ -751,6 +778,32 @@ if (typeof XLSX === 'undefined') {
           <input type="file" id="fileDistCompare" accept=".xls,.xlsx">
         </label>
         <div id="distCompareReport" style="margin-top:14px;"></div>
+
+        <div style="border-top:1px dashed var(--line); margin-top:16px; padding-top:13px;">
+          <div style="font-family:'El Messiri',sans-serif;font-weight:700;font-size:13.5px;color:var(--heading);">
+            ⚖️ مقارنة ملفين مباشرةً (بدون قاعدة البيانات)
+          </div>
+          <div class="hint" style="margin:5px 0 9px;">
+            ارفع الملفين لمعرفة الأسماء الموجودة في أحدهما وغير الموجودة في الآخر.
+            يقبل الشكلين: «قوائم قبل التفويج» المسطّح، أو قوائم الأقسام.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <label class="dropzone" for="cmpFileA" style="padding:13px;">
+              <div class="dz-icon" style="font-size:20px;">📄</div>
+              <div class="dz-title" style="font-size:12.5px;">الملف الأول</div>
+              <div class="dz-sub" id="cmpNameA">لم يُختر بعد</div>
+              <input type="file" id="cmpFileA" accept=".xls,.xlsx">
+            </label>
+            <label class="dropzone" for="cmpFileB" style="padding:13px;">
+              <div class="dz-icon" style="font-size:20px;">📄</div>
+              <div class="dz-title" style="font-size:12.5px;">الملف الثاني</div>
+              <div class="dz-sub" id="cmpNameB">لم يُختر بعد</div>
+              <input type="file" id="cmpFileB" accept=".xls,.xlsx">
+            </label>
+          </div>
+          <button class="btn primary" id="cmpTwoBtn" style="margin-top:10px;" disabled>⚖️ قارن الملفين</button>
+          <div id="cmpTwoReport" style="margin-top:12px;"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -928,6 +981,8 @@ let STATE = {
     genderBalance: true,     // موازنة الجنس بشكل صارم
     avoidSameSection: true,  // المعيد لا يعود لنفس قسمه السابق
     // ─── SCOPE: 'all' = تطبيق على كل المستويات | 'custom' = لكل مستوى إعداداته ───
+    keepSectionIdentity: false,   // 1م1 ← 2م1 : الحفاظ على رقم الفوج عند الانتقال
+    schoolSections: {},           // "اسم الابتدائية" -> [أرقام أفواج السنة الأولى]
     optScope: 'all',
     levelOpts: {
       1:{seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true},
@@ -999,6 +1054,8 @@ function normalizeConfig(){
     annexOrigins:{1:[],2:[],3:[],4:[]},
     annexTargets:{1:[],2:[],3:[],4:[]},
     seedTopN:true, repeaterRotation:true, genderBalance:true, avoidSameSection:true,
+    keepSectionIdentity:false,
+    schoolSections:{},
     optScope:'all',
     levelOpts:{1:{},2:{},3:{},4:{}}
   };
@@ -1191,15 +1248,38 @@ function runDistribution(){
   const {counts:c1, result:r1} = freshCounts(keys1);
   const repCounts1 = {};
 
+  /* أفواج مسموحة لكل ابتدائية (إن حُددت) */
+  const schoolMap = cfg.schoolSections || {};
+  const allowedKeys = s => {
+    const o = (s.origin||'غير محدد').trim();
+    const a = (schoolMap[o]||[]).map(Number).filter(k=>keys1.includes(k));
+    return a.length ? a : keys1;
+  };
+  const hasSchoolRule = Object.keys(schoolMap).length > 0;
+  /* يوزّع كل وافد داخل أفواج ابتدائيته فقط */
+  const assignNewcomers = (arr) => {
+    arr.forEach(s=>{
+      const ks = allowedKeys(s);
+      let best=null;
+      ks.forEach(k=>{
+        if (best===null){ best=k; return; }
+        const a=c1[k], b=c1[best];
+        const ga = s.g==='M'?a.M:a.F, gb = s.g==='M'?b.M:b.F;
+        if (a.total<b.total || (a.total===b.total && ga<gb)) best=k;
+      });
+      r1[best].push(s); c1[best].total++; c1[best][s.g]++;
+    });
+  };
+
   if (cfg.mergeRepeaters1){
     // Merge mode: all together, but still seed top-N first then rotate repeaters
     const newStudents = pool1.filter(s=>s.status==='NEW').sort((a,b)=>b.avg-a.avg);
     const repeaters1  = pool1.filter(s=>s.status==='REPEAT');
 
-    if (o1.seedTopN && newStudents.length >= n1){
-      // Phase 1: seed — top N new arrivals, one per section
+    if (hasSchoolRule){
+      assignNewcomers(newStudents);
+    } else if (o1.seedTopN && newStudents.length >= n1){
       const remainder = seedTopN(newStudents, keys1, c1, r1);
-      // Phase 2: greedy fill the rest
       greedyAssignInto(remainder, keys1, c1, r1);
     } else {
       greedyAssignInto(newStudents, keys1, c1, r1);
@@ -1214,7 +1294,9 @@ function runDistribution(){
     // Separate mode
     const newStudents = pool1.filter(s=>s.status==='NEW').sort((a,b)=>b.avg-a.avg);
     const repeaters1  = pool1.filter(s=>s.status==='REPEAT');
-    if (o1.seedTopN && newStudents.length >= n1){
+    if (hasSchoolRule){
+      assignNewcomers(newStudents);
+    } else if (o1.seedTopN && newStudents.length >= n1){
       const remainder = seedTopN(newStudents, keys1, c1, r1);
       greedyAssignInto(remainder, keys1, c1, r1);
     } else {
@@ -1228,7 +1310,23 @@ function runDistribution(){
   }
 
   // Gender balance refinement pass
-  if (o1.genderBalance) genderBalancePass(keys1, c1, r1);
+  if (o1.genderBalance){
+    if (!hasSchoolRule){
+      genderBalancePass(keys1, c1, r1);
+    } else {
+      // موازنة داخل كل مجموعة أفواج على حدة حتى لا يخرج تلميذ من أفواج ابتدائيته
+      const groups = new Map();
+      Object.keys(schoolMap).forEach(sch=>{
+        const set = (schoolMap[sch]||[]).map(Number).filter(k=>keys1.includes(k)).sort((a,b)=>a-b);
+        if (set.length>1) groups.set(set.join(','), set);
+      });
+      const claimed = new Set();
+      groups.forEach(set=>set.forEach(k=>claimed.add(k)));
+      const free = keys1.filter(k=>!claimed.has(k));
+      if (free.length>1) groups.set('free', free);
+      groups.forEach(set=> genderBalancePass(set, c1, r1));
+    }
+  }
   results[1] = {sections: r1};
 
   /* ══════════ LEVELS 2-4 ══════════ */
@@ -1295,7 +1393,8 @@ function runDistribution(){
 
       // Place promoted students into their mapped section (identity)
       promoted.forEach(s=>{
-        let dest = mapping[s.originSection];
+        let dest = cfg.keepSectionIdentity && s.originSection!=null && result[s.originSection]
+                 ? s.originSection : mapping[s.originSection];
         if (dest===undefined || !result[dest]){
           dest = keys.length ? keys[0] : 1;
           if (!result[dest]){ result[dest]=[]; counts[dest]={total:0,M:0,F:0}; }
@@ -1303,6 +1402,8 @@ function runDistribution(){
         result[dest].push(s); counts[dest].total++; counts[dest][s.g]++;
       });
 
+      // ➡️ الحفاظ على رقم الفوج: يتجاوز التدوير ويضع كلًا في فوجه نفسه إن وُجد
+      const keepId = cfg.keepSectionIdentity;
       // المعيدون: وجهة خاصة بهم، والتدوير يبقى داخل نطاق الأم أو الملحقة
       const placeRep = s => {
         let d = (repMap[s.originSection]!=null) ? repMap[s.originSection] : mapping[s.originSection];
@@ -1310,7 +1411,15 @@ function runDistribution(){
           if(!result[d]){result[d]=[]; counts[d]={total:0,M:0,F:0};} }
         result[d].push(s); counts[d].total++; counts[d][s.g]++;
       };
-      if (o.repeaterRotation && repeaters.length > 0){
+      if (keepId){
+        repeaters.forEach(s=>{
+          let d = s.originSection;
+          if (d==null || !result[d]) d = (repMap[s.originSection]!=null?repMap[s.originSection]:mapping[s.originSection]);
+          if (d===undefined || !result[d]){ d = keys.length?keys[0]:1;
+            if(!result[d]){result[d]=[]; counts[d]={total:0,M:0,F:0};} }
+          result[d].push(s); counts[d].total++; counts[d][s.g]++;
+        });
+      } else if (o.repeaterRotation && repeaters.length > 0){
         const aKeys = keys.filter(k=>isAnnexTarget(lvl,k));
         const mKeys = keys.filter(k=>!isAnnexTarget(lvl,k));
         const aRep  = repeaters.filter(s=>isAnnexOrigin(lvl, s.originSection));
@@ -1321,7 +1430,7 @@ function runDistribution(){
         repeaters.forEach(placeRep);
       }
       // موازنة الجنس داخل كل نطاق على حدة (لا خلط بين الأم والملحقة)
-      if (o.genderBalance){
+      if (o.genderBalance && !keepId){
         const aK = keys.filter(k=>isAnnexTarget(lvl,k));
         const mK = keys.filter(k=>!isAnnexTarget(lvl,k));
         if (aK.length>1) genderBalancePass(aK, counts, result);
@@ -1715,6 +1824,7 @@ function renderSchoolMap(){
   document.getElementById('sectionsCount1').textContent = manualN1 || autoN1;
   document.getElementById('sectionsCount1Mode').textContent = manualN1 ? '(محدَّد يدويًا — المقترح تلقائيًا: '+autoN1+')' : '(محسوب تلقائيًا من حجم القسم)';
   [2,3,4].forEach(lvl=>renderLevelMapCard(lvl));
+  renderSchoolSections();
   updateDistPreview();
 }
 function renderLevelMapCard(lvl){
@@ -1999,6 +2109,85 @@ function renderSpecial(){
 
 
 
+
+
+/* ═══ مقارنة ملفين مباشرةً ═══ */
+let _cmpA=null, _cmpB=null, _cmpAName='', _cmpBName='';
+
+async function readAnyList(file){
+  const buf = await file.arrayBuffer();
+  const rows = bufferStartsWithHtml(buf)
+    ? sheetRowsFromHtml(new TextDecoder('utf-8').decode(buf))
+    : (()=>{const wb=XLSX.read(buf,{type:'array',codepage:1256}); let a=[];
+            wb.SheetNames.forEach(n=>{a=a.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:true}));});
+            return a;})();
+  const flat = parseRosterRows(rows);
+  if (flat && flat.length)
+    return flat.map(s=>({id:s.id, name:s.name, dob:s.dob, where:s.lvlW||''}));
+  const p = parseDistributionRows(rows);
+  if (p && p.list.length)
+    return p.list.map(s=>({id:s.id, name:(s.ln+' '+s.fn).trim(), dob:s.dob, where:s.lvl+'م'+s.sec}));
+  return null;
+}
+
+function keyOf(s){ return s.id ? 'I:'+String(s.id).trim() : 'N:'+normAr(s.name)+'|'+(s.dob||''); }
+
+function compareTwoLists(){
+  const el = document.getElementById('cmpTwoReport');
+  if (!_cmpA || !_cmpB){ el.innerHTML='<div class="alert warn">ارفع الملفين أولًا.</div>'; return; }
+
+  const idxB = new Map(), nameB = new Map();
+  _cmpB.forEach(s=>{ if(s.id) idxB.set(String(s.id).trim(), s); nameB.set(normAr(s.name), s); });
+  const idxA = new Map(), nameA = new Map();
+  _cmpA.forEach(s=>{ if(s.id) idxA.set(String(s.id).trim(), s); nameA.set(normAr(s.name), s); });
+
+  const onlyA = _cmpA.filter(s=> !(s.id && idxB.has(String(s.id).trim())) && !nameB.has(normAr(s.name)));
+  const onlyB = _cmpB.filter(s=> !(s.id && idxA.has(String(s.id).trim())) && !nameA.has(normAr(s.name)));
+
+  // نفس الاسم لكن رقم مختلف
+  const idDiff = [];
+  _cmpA.forEach(s=>{
+    const m = nameB.get(normAr(s.name));
+    if (m && s.id && m.id && String(s.id).trim()!==String(m.id).trim())
+      idDiff.push({name:s.name, a:s.id, b:m.id});
+  });
+
+  const box=(cl,n,l)=>`<div class="cmp-box ${cl}"><div class="cb-n">${n}</div><div class="cb-l">${l}</div></div>`;
+  const tbl=(arr,lbl)=>`<div class="cd-body"><table class="cmp-tb">
+      <thead><tr><th>الاسم</th><th>رقم التعريف</th><th>${lbl}</th></tr></thead><tbody>
+      ${arr.slice(0,400).map(s=>`<tr><td><b>${esc(s.name)}</b></td>
+        <td style="font-size:10.5px">${esc(s.id||'—')}</td><td>${esc(s.where||'')}</td></tr>`).join('')}
+      </tbody></table></div>`;
+
+  let html = `<div class="cmp-grid">
+    ${box('info', _cmpA.length, 'في الملف الأول')}
+    ${box('info', _cmpB.length, 'في الملف الثاني')}
+    ${box(onlyA.length?'bad':'ok', onlyA.length, 'في الأول فقط')}
+    ${box(onlyB.length?'bad':'ok', onlyB.length, 'في الثاني فقط')}
+    ${box(idDiff.length?'warn':'ok', idDiff.length, 'اسم واحد برقمين')}
+  </div>`;
+  if (onlyA.length) html += `<details class="cmp-details" open><summary>🔴 موجودون في «${esc(_cmpAName)}» وغائبون عن «${esc(_cmpBName)}» (${onlyA.length})</summary>${tbl(onlyA,'الموضع')}</details>`;
+  if (onlyB.length) html += `<details class="cmp-details" open><summary>🔴 موجودون في «${esc(_cmpBName)}» وغائبون عن «${esc(_cmpAName)}» (${onlyB.length})</summary>${tbl(onlyB,'الموضع')}</details>`;
+  if (idDiff.length) html += `<details class="cmp-details"><summary>⚠️ نفس الاسم برقم تعريف مختلف (${idDiff.length})</summary>
+    <div class="cd-body"><table class="cmp-tb"><thead><tr><th>الاسم</th><th>رقم في الأول</th><th>رقم في الثاني</th></tr></thead><tbody>
+    ${idDiff.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td style="font-size:10.5px">${esc(x.a)}</td><td style="font-size:10.5px">${esc(x.b)}</td></tr>`).join('')}
+    </tbody></table></div></details>`;
+  if (!onlyA.length && !onlyB.length)
+    html += '<div class="alert ok">✓ القائمتان متطابقتان في الأسماء — لا يوجد تلميذ ناقص في أيٍّ منهما.</div>';
+  el.innerHTML = html;
+}
+
+async function loadCmp(which, file){
+  const nameEl = document.getElementById(which==='A'?'cmpNameA':'cmpNameB');
+  nameEl.textContent = '⏳ ' + file.name;
+  try{
+    const list = await readAnyList(file);
+    if (!list){ nameEl.textContent = '⚠️ تعذّر التعرّف على الملف'; return; }
+    if (which==='A'){ _cmpA=list; _cmpAName=file.name; } else { _cmpB=list; _cmpBName=file.name; }
+    nameEl.textContent = `✓ ${file.name} — ${list.length} تلميذ`;
+    document.getElementById('cmpTwoBtn').disabled = !(_cmpA && _cmpB);
+  }catch(e){ nameEl.textContent = '⚠️ ' + e.message; }
+}
 
 /* ═══ استيراد «قوائم ما قبل التفويج» — المصدر المعتمد ═══ */
 let _rosterParsed = null, _rosterNotIn = [];
@@ -3790,6 +3979,10 @@ function portalShowCard(src, idOrRank){
         <div class="sc-field"><label>الاسم</label><div class="val">${esc(r.fn)}</div></div>
         <div class="sc-field"><label>الجنس</label><div class="val">${r.g==='M'?'ذكر':'أنثى'}</div></div>
         <div class="sc-field"><label>تاريخ الميلاد</label><div class="val">${esc(r.dob)}</div></div>
+        <div class="sc-field"><label>رقم التعريف الوطني</label>
+          <div class="val" style="letter-spacing:.5px;">${esc(r.id||'—')}</div></div>
+        <div class="sc-field"><label>رقم التسجيل</label>
+          <div class="val">${esc(ex.matricule||'—')}</div></div>
         <div class="sc-field full"><label>المستوى الدراسي الحالي</label>
           <div class="val">${src==='new_arrival'?'وافد جديد — السنة الأولى متوسط':LEVEL_LABEL[r.lvl]+' · فوج '+r.sec}</div></div>
       </div>
@@ -4068,6 +4261,8 @@ function generateStudentPortal(){
         const key = s.dob; // primary key by DOB (unique enough)
         lookup[s.uid] = {
           name: s.name,
+          nid:  s.id || '',
+          mat:  ((STATE.studentExtras||{})[s.uid]||{}).matricule || '',
           dob:  s.dob,
           lvl, section: k,
           status: s.status,
@@ -4262,11 +4457,11 @@ ${favSrc ? `<link rel="icon" href="${favSrc}">` : ''}
 <div class="search-wrap no-print">
   <div class="search-card">
     <h2>🔍 البحث عن معلوماتك</h2>
-    <p class="sub">أدخل اسمك الكامل وتاريخ ميلادك — سيظهر فوجك واستمارتك للسنة القادمة</p>
+    <p class="sub">أدخل اسمك الكامل وتاريخ ميلادك — أو رقم تعريفك الوطني وحده</p>
     <div class="search-fields">
       <div class="field">
         <label>اللقب والاسم</label>
-        <input type="text" id="sName" placeholder="مثال: بن علي أحمد" autocomplete="name">
+        <input type="text" id="sName" placeholder="الاسم الكامل أو رقم التعريف الوطني" autocomplete="name">
       </div>
       <div class="field">
         <label>تاريخ الميلاد</label>
@@ -4313,7 +4508,9 @@ function doSearch(){
     return;
   }
 
+  const idQ = (document.getElementById('sName').value||'').trim();
   const matches = STUDENTS.filter(s=>{
+    if (/^\\d{6,}$/.test(idQ)) return String(s.nid||'')===idQ;   // بحث برقم التعريف الوطني
     const full = norm(s.name);
     const nameParts = full.split(' ');
     const nameMatch = !nameQ || full.includes(nameQ) || nameParts.some(p=>p.startsWith(nameQ.split(' ')[0]));
@@ -4382,6 +4579,8 @@ function showCard(uid){
         <div class="info-fields">
           <div class="info-field"><label>اللقب</label><div class="val">\${esc(s.name.split(' ').slice(0,2).join(' '))}</div></div>
           <div class="info-field"><label>الاسم</label><div class="val">\${esc(s.name.split(' ').slice(2).join(' ')||s.name)}</div></div>
+          <div class="info-field"><label>رقم التعريف الوطني</label><div class="val" style="letter-spacing:.5px">\${esc(s.nid)||'—'}</div></div>
+          <div class="info-field"><label>رقم التسجيل</label><div class="val">\${esc(s.mat)||'—'}</div></div>
           <div class="info-field"><label>تاريخ الميلاد</label><div class="val">\${esc(s.dob)}</div></div>
           <div class="info-field"><label>المستوى الدراسي</label><div class="val">\${esc(LEVEL_LBL[s.lvl])}</div></div>
           <div class="info-field"><label>الفوج الجديد</label><div class="val big">فوج \${esc(s.section)}</div></div>
@@ -4582,6 +4781,47 @@ function toggleBrand(hide){
 }
 
 
+function renderSchoolSections(){
+  const box = document.getElementById('schoolSecList');
+  if (!box) return;
+  normalizeConfig();
+  const newcomers = POOLS[1].filter(s=>s.status==='NEW');
+  if (!newcomers.length){ box.innerHTML = '<div style="font-size:12px;color:var(--ink-soft)">لا يوجد وافدون جدد.</div>'; return; }
+
+  const counts = {};
+  newcomers.forEach(s=>{ const o=(s.origin||'غير محدد').trim(); counts[o]=(counts[o]||0)+1; });
+  const schools = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const n1 = STATE.newSectionsCount[1] || Math.max(1, Math.ceil(POOLS[1].length/STATE.config.targetSize1));
+  const keys = Array.from({length:n1},(_,i)=>i+1);
+  const cfgS = STATE.config.schoolSections || {};
+
+  box.innerHTML = schools.map(sch=>{
+    const sel = (cfgS[sch]||[]).map(String);
+    const chips = keys.map(k=>`<label class="sch-chip ${sel.includes(String(k))?'on':''}">
+      <input type="checkbox" class="sch-sec" data-sch="${esc(sch)}" data-k="${k}" ${sel.includes(String(k))?'checked':''}> ${k}
+    </label>`).join('');
+    return `<div class="sch-row">
+      <div class="sch-name" title="${esc(sch)}">${esc(sch)} <span>(${counts[sch]})</span></div>
+      <div class="sch-chips">${chips}</div>
+      <button class="btn ghost small sch-clear" data-sch="${esc(sch)}">كل الأفواج</button>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('.sch-sec').forEach(cb=> cb.addEventListener('change', e=>{
+    normalizeConfig();
+    const sch=e.target.dataset.sch, k=String(e.target.dataset.k);
+    let a=(STATE.config.schoolSections[sch]||[]).map(String);
+    a = e.target.checked ? Array.from(new Set([...a,k])) : a.filter(x=>x!==k);
+    if (a.length) STATE.config.schoolSections[sch]=a; else delete STATE.config.schoolSections[sch];
+    persist(); rerun();
+  }));
+  box.querySelectorAll('.sch-clear').forEach(b=> b.addEventListener('click', e=>{
+    normalizeConfig();
+    delete STATE.config.schoolSections[e.target.dataset.sch];
+    persist(); rerun();
+  }));
+}
+
 function renderDistOptions(){
   const cfg   = STATE.config;
   const scope = cfg.optScope || 'all';
@@ -4597,7 +4837,8 @@ function renderDistOptions(){
 
   /* global toggles */
   const g = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
-             optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance'};
+             optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance',
+             optKeepIdentity:'keepSectionIdentity'};
   Object.keys(g).forEach(id=>{
     const el = document.getElementById(id);
     if (el) el.checked = cfg[g[id]] !== false;
@@ -4634,8 +4875,10 @@ function updateDistPreview(){
   const KEYS = Object.keys(label);
 
   let html = '';
+  const schoolRuleCount = Object.keys(STATE.config.schoolSections||{}).length;
   if (scope === 'all'){
     const on = KEYS.filter(k => cfg[k] !== false).map(k=>label[k]);
+    if (cfg.keepSectionIdentity) on.unshift('➡️ نفس رقم الفوج');
     const n1 = STATE.newSectionsCount[1] || Math.max(1, Math.ceil(POOLS[1].length / cfg.targetSize1));
     const rep1 = POOLS[1].filter(s=>s.status==='REPEAT').length;
     html = `<b>النطاق: جميع المستويات</b><br>` +
@@ -4652,6 +4895,8 @@ function updateDistPreview(){
     }).join('');
     html = `<b>النطاق: مخصّص لكل مستوى</b>${rows}`;
   }
+  if (schoolRuleCount)
+    html += `<br><span style="font-size:11px;">🏫 ${schoolRuleCount} ابتدائية موجَّهة لأفواج محددة — الموازنة تبقى داخل تلك الأفواج</span>`;
   el.style.display = 'block';
   el.innerHTML = html;
 }
@@ -4689,12 +4934,13 @@ document.querySelectorAll('#optScopeSeg .seg').forEach(seg=>{
 });
 
 /* ── global (all-levels) toggles ── */
-['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance'].forEach(id=>{
+['optSeedTopN','optRepeaterRotation','optAvoidSameSection','optGenderBalance','optKeepIdentity'].forEach(id=>{
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('change', e=>{
     const map = {optSeedTopN:'seedTopN', optRepeaterRotation:'repeaterRotation',
-                 optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance'};
+                 optAvoidSameSection:'avoidSameSection', optGenderBalance:'genderBalance',
+                 optKeepIdentity:'keepSectionIdentity'};
     STATE.config[map[id]] = e.target.checked;
     persist(); rerun();
   });
@@ -4714,6 +4960,9 @@ document.getElementById('fileNewArr').addEventListener('change', e=>{ if (e.targ
 document.getElementById('fileLvl4Decisions').addEventListener('change', e=>{ if (e.target.files.length) handleLvl4DecisionsFile(e.target.files[0]); });
 document.getElementById('fileDistCompare').addEventListener('change', e=>{ if (e.target.files.length) handleDistCompareFile(e.target.files[0]); });
 document.getElementById('fileRoster').addEventListener('change', e=>{ if (e.target.files.length) handleRosterFile(e.target.files[0]); });
+document.getElementById('cmpFileA').addEventListener('change', e=>{ if(e.target.files.length) loadCmp('A', e.target.files[0]); });
+document.getElementById('cmpFileB').addEventListener('change', e=>{ if(e.target.files.length) loadCmp('B', e.target.files[0]); });
+document.getElementById('cmpTwoBtn').addEventListener('click', compareTwoLists);
 document.getElementById('downloadTemplate4').addEventListener('click', downloadLvl4Template);
 document.getElementById('applyImport').addEventListener('click', applyImportedData);
 document.getElementById('resetToDemo').addEventListener('click', ()=>{ if (confirm('سيتم استبدال البيانات الحالية ببيانات العرض التجريبي. متابعة؟')) resetToDemo(); });
