@@ -301,6 +301,20 @@ if (typeof XLSX === 'undefined') {
 
 
 
+
+  .anx-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media(max-width:760px){.anx-grid{grid-template-columns:1fr;}}
+  .anx-lbl{font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.3px;}
+  .anx-inline{display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:8px 12px; margin-bottom:12px;
+    border:1px solid var(--gold); border-radius:9px; background:#FFFDF6;}
+  body.dark .anx-inline{background:#23271C;}
+  .anx-inline-lbl{font-size:12.5px; font-weight:700; color:var(--heading); white-space:nowrap;}
+  .anx-inline-hint{font-size:11px; color:var(--ink-soft);}
+  .anx-chip.sm{padding:2px 9px; font-size:11.5px;}
+  .section-card.annex{border-color:var(--gold); border-width:1.5px;}
+  .section-card.annex .sc-head{background:linear-gradient(90deg,#6B4B0E,#8A6317);}
+  .anx-badge{font-size:9.5px; background:var(--gold); color:#2A1E08; padding:1px 7px; border-radius:999px; margin-right:6px; font-weight:700;}
+
   /* ═══ SCHOOL → SECTIONS ═══ */
   .sch-row{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
     padding:8px 0; border-bottom:1px solid var(--line);}
@@ -696,6 +710,7 @@ if (typeof XLSX === 'undefined') {
           </div>
           <div id="schoolSecList"></div>
         </div>
+        <div id="annexBox1" style="margin-top:12px;"></div>
       </div>
       <div class="card" id="mapping-card-2"></div>
       <div class="card" id="mapping-card-3"></div>
@@ -1355,8 +1370,19 @@ function runDistribution(){
       n = Math.max(n, origSet.size ? Math.max(...origSet) : 1);
       keys = Array.from({length:n}, (_,i)=>i+1);
       ({counts, result} = freshCounts(keys));
+      const aKeysI = keys.filter(k=>isAnnexTarget(lvl,k));
       all.forEach(s=>{
         let d = Number(s.originSection);
+        const fromAnnex = isAnnexOrigin(lvl, s.originSection);
+        // إن كان من الملحقة ورقمه ليس ضمن أفواجها، وجّهه لأقل أفواج الملحقة عددًا
+        if (aKeysI.length && fromAnnex && !aKeysI.includes(d)){
+          d = aKeysI.reduce((b,k)=> counts[k].total < counts[b].total ? k : b, aKeysI[0]);
+        }
+        // وإن لم يكن من الملحقة لكن رقمه محجوز لها، أبعده عنها
+        else if (aKeysI.length && !fromAnnex && aKeysI.includes(d)){
+          const mK = keys.filter(k=>!isAnnexTarget(lvl,k));
+          if (mK.length) d = mK.reduce((b,k)=> counts[k].total < counts[b].total ? k : b, mK[0]);
+        }
         if (!d || !result[d]) d = keys[0];
         result[d].push(s); counts[d].total++; counts[d][s.g]++;
       });
@@ -1842,6 +1868,8 @@ function renderSchoolMap(){
   document.getElementById('sectionsCount1Mode').textContent = manualN1 ? '(محدَّد يدويًا — المقترح تلقائيًا: '+autoN1+')' : '(محسوب تلقائيًا من حجم القسم)';
   [2,3,4].forEach(lvl=>renderLevelMapCard(lvl));
   renderSchoolSections();
+  const ab1 = document.getElementById('annexBox1');
+  if (ab1){ ab1.innerHTML = renderAnnexBox(1); wireAnnex(ab1); }
   updateDistPreview();
 }
 function renderLevelMapCard(lvl){
@@ -1879,7 +1907,8 @@ function renderLevelMapCard(lvl){
       </div>
     </div>
     <div class="hint" style="margin-top:10px;">${mode==='identity' ? 'كل فوج حالي يتجه افتراضيًا لنفس الرقم — غيّر الوجهة لدمج عدة أفواج في فوج جديد واحد.' : 'وضع تلقائي بالكامل: التطبيق يحدد عدد الأقسام ويوزّع الجميع بتوازن أمثل في الحجم والجنس.'}</div>
-    <div style="margin-top:10px;">${body}</div>`;
+    <div style="margin-top:10px;">${body}</div>
+    ${renderAnnexBox(lvl)}`;
 
   card.querySelectorAll('[data-seg-level] .seg').forEach(seg=>{
     seg.addEventListener('click', ()=>{ STATE.config.levelMode[lvl] = seg.dataset.mode; persist(); rerun(); });
@@ -1890,6 +1919,7 @@ function renderLevelMapCard(lvl){
     STATE.newSectionsCount[lvl] = (v && v>0) ? v : null;
     persist(); rerun();
   });
+  wireAnnex(card);          // مفاتيح الملحقة تعمل في كل الأوضاع
   if (mode==='rebalance'){
     const inp = card.querySelector('[data-level-target]');
     inp.addEventListener('input', ()=>{ STATE.config.levelTargetSize[lvl] = Number(inp.value)||32; persist(); rerun(); });
@@ -1909,26 +1939,8 @@ function renderLevelMapCard(lvl){
         persist(); rerun();
       });
     });
-    card.querySelectorAll('.anx-origin').forEach(cb=>{
-      cb.addEventListener('change', e=>{
-        const o = String(e.target.dataset.anxOld);
-        normalizeConfig();
-        let a = (STATE.config.annexOrigins[lvl]||[]).map(String);
-        a = e.target.checked ? Array.from(new Set([...a,o])) : a.filter(x=>x!==o);
-        STATE.config.annexOrigins[lvl] = a;
-        persist(); rerun();
-      });
-    });
-    card.querySelectorAll('.anx-target').forEach(cb=>{
-      cb.addEventListener('change', e=>{
-        const t = String(e.target.dataset.anxT);
-        normalizeConfig();
-        let a = (STATE.config.annexTargets[lvl]||[]).map(String);
-        a = e.target.checked ? Array.from(new Set([...a,t])) : a.filter(x=>x!==t);
-        STATE.config.annexTargets[lvl] = a;
-        persist(); rerun();
-      });
-    });
+    wireAnnex(card);
+
   }
 }
 function renderMappingTable(targetLevel, fromLabel){
@@ -1953,15 +1965,9 @@ function renderMappingTable(targetLevel, fromLabel){
       <td><input type="number" min="1" max="40" value="${vP}" class="map-input" data-map-old="${o}" ${nP?'':'disabled'}></td>
       <td style="font-size:11px;color:var(--red)">${nR} معيد</td>
       <td><input type="number" min="1" max="40" value="${vR}" class="rep-input" data-rep-old="${o}" ${nR?'':'disabled'}></td>
-      <td><input type="checkbox" class="anx-origin" data-anx-old="${o}" ${isAnx?'checked':''} title="هذا الفوج تابع للملحقة"></td>
+      <td><input type="checkbox" class="anx-origin" data-anx-lvl="${targetLevel}" data-anx-old="${o}" ${isAnx?'checked':''} title="هذا الفوج تابع للملحقة"></td>
     </tr>`;
   });
-
-  const tKeys = newSectionKeysFor(targetLevel);
-  const annexT = ((STATE.config.annexTargets||{})[targetLevel]||[]).map(String);
-  const tgt = tKeys.map(k=>`<label class="anx-chip ${annexT.includes(String(k))?'on':''}">
-      <input type="checkbox" class="anx-target" data-anx-t="${k}" ${annexT.includes(String(k))?'checked':''}> فوج ${k}
-    </label>`).join('');
 
   return `
   <table class="map-table adv">
@@ -1972,12 +1978,67 @@ function renderMappingTable(targetLevel, fromLabel){
       <th>🏫 ملحقة</th>
     </tr></thead>
     <tbody>${rows}</tbody>
-  </table>
-  <div class="anx-box">
-    <div class="anx-title">🏫 أفواج الملحقة في ${LEVEL_LABEL[targetLevel]} (الوجهة)</div>
-    <div class="anx-hint">حدّد الأفواج الجديدة التابعة للملحقة — لن يُخلط تلاميذها مع المؤسسة الأم في التدوير ولا في موازنة الجنس.</div>
-    <div class="anx-chips">${tgt || '<span style="font-size:12px;color:var(--ink-soft)">لا توجد أفواج بعد</span>'}</div>
+  </table>`;
+}
+
+/* ═══ صندوق الملحقة — يُعرض في كل الأوضاع ═══ */
+function renderAnnexBox(lvl){
+  normalizeConfig();
+  const annexO = (STATE.config.annexOrigins[lvl]||[]).map(String);
+  const annexT = (STATE.config.annexTargets[lvl]||[]).map(String);
+
+  // أفواج الأصل المتاحة
+  const origs = new Set();
+  POOLS[lvl].forEach(s=>{ if (s.originSection!=null) origs.add(Number(s.originSection)); });
+  const oList = Array.from(origs).sort((a,b)=>a-b);
+
+  // أفواج الوجهة: من النتائج إن وُجدت، وإلا من الإعدادات
+  let tList = [];
+  if (STATE.results && STATE.results[lvl]) tList = Object.keys(STATE.results[lvl].sections).map(Number).sort((a,b)=>a-b);
+  if (!tList.length) tList = newSectionKeysFor(lvl);
+
+  const chipO = oList.map(k=>`<label class="anx-chip ${annexO.includes(String(k))?'on':''}">
+      <input type="checkbox" class="anx-origin" data-anx-lvl="${lvl}" data-anx-old="${k}" ${annexO.includes(String(k))?'checked':''}> فوج ${k}
+    </label>`).join('') || '<span style="font-size:12px;color:var(--ink-soft)">لا توجد أفواج أصل</span>';
+  const chipT = tList.map(k=>`<label class="anx-chip ${annexT.includes(String(k))?'on':''}">
+      <input type="checkbox" class="anx-target" data-anx-lvl="${lvl}" data-anx-t="${k}" ${annexT.includes(String(k))?'checked':''}> فوج ${k}
+    </label>`).join('') || '<span style="font-size:12px;color:var(--ink-soft)">لا توجد أفواج بعد</span>';
+
+  const nA = POOLS[lvl].filter(s=>isAnnexOrigin(lvl, s.originSection)).length;
+
+  return `<div class="anx-box">
+    <div class="anx-title">🏫 الملحقة — ${LEVEL_LABEL[lvl]}</div>
+    <div class="anx-hint">
+      تلاميذ أفواج <b>الأصل</b> المؤشَّرة يُوزَّعون <b>حصريًا</b> على أفواج <b>الوجهة</b> المؤشَّرة،
+      ولا يُخلطون مع المؤسسة الأم في التدوير ولا في موازنة الجنس.
+      ${nA ? `<b style="color:var(--gold)"> (${nA} تلميذ حاليًا في نطاق الملحقة)</b>` : ''}
+    </div>
+    <div class="anx-grid">
+      <div><div class="anx-lbl">أفواج الأصل (من أين يأتون)</div><div class="anx-chips">${chipO}</div></div>
+      <div><div class="anx-lbl">أفواج الوجهة (إلى أين يذهبون)</div><div class="anx-chips">${chipT}</div></div>
+    </div>
   </div>`;
+}
+
+/* ربط مفاتيح الملحقة أينما ظهرت */
+function wireAnnex(root){
+  if (!root) return;
+  root.querySelectorAll('.anx-origin').forEach(cb=> cb.addEventListener('change', e=>{
+    normalizeConfig();
+    const lvl=e.target.dataset.anxLvl; if(!lvl) return;
+    const o=String(e.target.dataset.anxOld);
+    let a=(STATE.config.annexOrigins[lvl]||[]).map(String);
+    a = e.target.checked ? Array.from(new Set([...a,o])) : a.filter(x=>x!==o);
+    STATE.config.annexOrigins[lvl]=a; persist(); rerun();
+  }));
+  root.querySelectorAll('.anx-target').forEach(cb=> cb.addEventListener('change', e=>{
+    normalizeConfig();
+    const lvl=e.target.dataset.anxLvl; if(!lvl) return;
+    const t=String(e.target.dataset.anxT);
+    let a=(STATE.config.annexTargets[lvl]||[]).map(String);
+    a = e.target.checked ? Array.from(new Set([...a,t])) : a.filter(x=>x!==t);
+    STATE.config.annexTargets[lvl]=a; persist(); rerun();
+  }));
 }
 
 function decisionBadge(s){
@@ -2031,9 +2092,18 @@ function renderLevelPanel(lvl){
     <div class="sub-tab ${STATE.activeSubTab[lvl]==='ALL'?'active':''}" data-lvl="${lvl}" data-tab="ALL">كل الأفواج</div>
     ${keys.map(k=>`<div class="sub-tab ${STATE.activeSubTab[lvl]===k?'active':''}" data-lvl="${lvl}" data-tab="${k}">فوج ${k} (${secObj[k].length})</div>`).join('')}
   </div>`;
+  const annexT = ((STATE.config.annexTargets||{})[lvl]||[]).map(String);
+  const annexChips = keys.map(k=>`<label class="anx-chip sm ${annexT.includes(String(k))?'on':''}">
+      <input type="checkbox" class="anx-target" data-anx-lvl="${lvl}" data-anx-t="${k}" ${annexT.includes(String(k))?'checked':''}> ${k}
+    </label>`).join('');
   const toolbar = `<div class="toolbar no-print">
       <label class="filter-chip"><input type="checkbox" id="filterRepeat${lvl}" ${STATE.filterRepeatOnly[lvl]?'checked':''}> إظهار المعيدين فقط</label>
-      <button class="btn ghost small" id="addSection${lvl}">+ إضافة فوج جديد</button></div>`;
+      <button class="btn ghost small" id="addSection${lvl}">+ إضافة فوج جديد</button></div>
+    <div class="anx-inline no-print">
+      <span class="anx-inline-lbl">🏫 أفواج الملحقة:</span>
+      <div class="anx-chips">${annexChips}</div>
+      <span class="anx-inline-hint">أشّر الأفواج التابعة للملحقة — يُعاد التوزيع فورًا مع عزلها</span>
+    </div>`;
   let shownKeys = STATE.activeSubTab[lvl]==='ALL' ? keys : [STATE.activeSubTab[lvl]];
   const isSingleView = shownKeys.length === 1;
 
@@ -2042,8 +2112,9 @@ function renderLevelPanel(lvl){
     if (STATE.filterRepeatOnly[lvl]) students = students.filter(s=>s.status==='REPEAT');
     const male = (secObj[k]||[]).filter(s=>s.g==='M').length, female = (secObj[k]||[]).length-male;
     const repCount = (secObj[k]||[]).filter(s=>s.status==='REPEAT').length;
-    return `<div class="section-card${isSingleView?' full':''}">
-      <div class="sc-head"><span class="name">فوج ${esc(k)}</span><span class="meta">${(secObj[k]||[]).length} تلميذ · ${male} ذ / ${female} إ ${repCount? ' · '+repCount+' معيد':''}</span></div>
+    const isAnx = isAnnexTarget(lvl, k);
+    return `<div class="section-card${isSingleView?' full':''}${isAnx?' annex':''}">
+      <div class="sc-head"><span class="name">فوج ${esc(k)}${isAnx?' <span class="anx-badge">🏫 ملحقة</span>':''}</span><span class="meta">${(secObj[k]||[]).length} تلميذ · ${male} ذ / ${female} إ ${repCount? ' · '+repCount+' معيد':''}</span></div>
       <div class="sc-body"><table class="roster">
         <thead><tr><th title="رقم التعريف الوطني">ر.التعريف</th><th>ر.التسجيل</th><th>الاسم</th><th>الجنس</th><th>الميلاد</th><th>الحالة</th><th>الأصل</th><th>المعدل</th><th>الصفة</th><th>نقل إلى</th><th></th></tr></thead>
         <tbody>${students.map(s=>studentRowHtml(s, lvl, keys)).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--ink-soft);padding:16px;">لا يوجد تلاميذ مطابقون</td></tr>'}</tbody>
@@ -2051,6 +2122,7 @@ function renderLevelPanel(lvl){
   }).join('');
 
   content.innerHTML = tabsHtml + toolbar + `<div class="section-grid${isSingleView?' single-view':''}">${cards}</div>`;
+  wireAnnex(content);
   content.querySelectorAll('.sub-tab').forEach(t=> t.addEventListener('click', ()=>{ STATE.activeSubTab[lvl]=t.dataset.tab; renderLevelPanel(lvl); }));
   const fchk = document.getElementById('filterRepeat'+lvl);
   if (fchk) fchk.addEventListener('change', e=>{ STATE.filterRepeatOnly[lvl]=e.target.checked; renderLevelPanel(lvl); });
