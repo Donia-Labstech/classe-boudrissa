@@ -680,6 +680,12 @@ if (typeof XLSX === 'undefined') {
           </div>
 
           <div id="distPreview" class="alert info" style="margin-top:12px; font-size:12px; display:none;"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; border-top:1px dashed var(--line); padding-top:12px;">
+            <button class="btn primary" id="forceRedistBtn">🔄 إعادة التوزيع الآن</button>
+            <span style="font-size:11.5px; color:var(--ink-soft); align-self:center;">
+              يُعيد بناء كل الأفواج من الصفر حسب الإعدادات الحالية — ويلغي النقل اليدوي السابق
+            </span>
+          </div>
         </div>
 
         <div style="border:1px solid var(--gold); border-radius:9px; padding:14px 16px; margin-top:12px; background:#FFFDF6;">
@@ -1285,7 +1291,10 @@ function runDistribution(){
       greedyAssignInto(newStudents, keys1, c1, r1);
     }
     // Phase 3: repeaters
-    if (o1.repeaterRotation && repeaters1.length > 0){
+    if (cfg.keepSectionIdentity){
+      repeaters1.forEach(s=>{ let d=Number(s.originSection);
+        if(!d||!r1[d]) d=keys1[0]; r1[d].push(s); c1[d].total++; c1[d][s.g]++; });
+    } else if (o1.repeaterRotation && repeaters1.length > 0){
       rotateRepeaters(repeaters1, keys1, c1, r1, repCounts1, o1.avoidSameSection);
     } else {
       greedyAssignInto(repeaters1.sort((a,b)=>b.avg-a.avg), keys1, c1, r1);
@@ -1335,6 +1344,25 @@ function runDistribution(){
     const promoted  = POOLS[lvl].filter(s=>s.status==='PROMOTED');
     const repeaters = POOLS[lvl].filter(s=>s.status==='REPEAT');
     let keys, counts, result, repCounts={};
+
+    /* ➡️ الحفاظ على رقم الفوج — يعمل في كل الأوضاع ويسبقها */
+    if (cfg.keepSectionIdentity){
+      const all = promoted.concat(repeaters);
+      const origSet = new Set();
+      all.forEach(s=>{ if (s.originSection!=null) origSet.add(Number(s.originSection)); });
+      const manual = STATE.newSectionsCount[lvl];
+      let n = manual || (origSet.size ? Math.max(...origSet) : 1);
+      n = Math.max(n, origSet.size ? Math.max(...origSet) : 1);
+      keys = Array.from({length:n}, (_,i)=>i+1);
+      ({counts, result} = freshCounts(keys));
+      all.forEach(s=>{
+        let d = Number(s.originSection);
+        if (!d || !result[d]) d = keys[0];
+        result[d].push(s); counts[d].total++; counts[d][s.g]++;
+      });
+      results[lvl] = {sections: result};
+      return;                       // لا تدوير ولا موازنة — الرقم محفوظ كما هو
+    }
 
     if (cfg.levelMode[lvl] === 'rebalance'){
       const target = cfg.levelTargetSize[lvl];
@@ -1393,8 +1421,7 @@ function runDistribution(){
 
       // Place promoted students into their mapped section (identity)
       promoted.forEach(s=>{
-        let dest = cfg.keepSectionIdentity && s.originSection!=null && result[s.originSection]
-                 ? s.originSection : mapping[s.originSection];
+        let dest = mapping[s.originSection];
         if (dest===undefined || !result[dest]){
           dest = keys.length ? keys[0] : 1;
           if (!result[dest]){ result[dest]=[]; counts[dest]={total:0,M:0,F:0}; }
@@ -1402,8 +1429,6 @@ function runDistribution(){
         result[dest].push(s); counts[dest].total++; counts[dest][s.g]++;
       });
 
-      // ➡️ الحفاظ على رقم الفوج: يتجاوز التدوير ويضع كلًا في فوجه نفسه إن وُجد
-      const keepId = cfg.keepSectionIdentity;
       // المعيدون: وجهة خاصة بهم، والتدوير يبقى داخل نطاق الأم أو الملحقة
       const placeRep = s => {
         let d = (repMap[s.originSection]!=null) ? repMap[s.originSection] : mapping[s.originSection];
@@ -1411,15 +1436,7 @@ function runDistribution(){
           if(!result[d]){result[d]=[]; counts[d]={total:0,M:0,F:0};} }
         result[d].push(s); counts[d].total++; counts[d][s.g]++;
       };
-      if (keepId){
-        repeaters.forEach(s=>{
-          let d = s.originSection;
-          if (d==null || !result[d]) d = (repMap[s.originSection]!=null?repMap[s.originSection]:mapping[s.originSection]);
-          if (d===undefined || !result[d]){ d = keys.length?keys[0]:1;
-            if(!result[d]){result[d]=[]; counts[d]={total:0,M:0,F:0};} }
-          result[d].push(s); counts[d].total++; counts[d][s.g]++;
-        });
-      } else if (o.repeaterRotation && repeaters.length > 0){
+      if (o.repeaterRotation && repeaters.length > 0){
         const aKeys = keys.filter(k=>isAnnexTarget(lvl,k));
         const mKeys = keys.filter(k=>!isAnnexTarget(lvl,k));
         const aRep  = repeaters.filter(s=>isAnnexOrigin(lvl, s.originSection));
@@ -1430,7 +1447,7 @@ function runDistribution(){
         repeaters.forEach(placeRep);
       }
       // موازنة الجنس داخل كل نطاق على حدة (لا خلط بين الأم والملحقة)
-      if (o.genderBalance && !keepId){
+      if (o.genderBalance){
         const aK = keys.filter(k=>isAnnexTarget(lvl,k));
         const mK = keys.filter(k=>!isAnnexTarget(lvl,k));
         if (aK.length>1) genderBalancePass(aK, counts, result);
@@ -1974,12 +1991,17 @@ function currentKeyOf(s, lvl){
 function studentRowHtml(s, lvl, sectionKeys){
   const origin = s.status==='NEW' ? (s.origin||'') : (s.originSection!=null? ('فوج '+s.originSection):'');
   const opts = sectionKeys.map(k=>`<option value="${k}" ${String(k)===String(currentKeyOf(s,lvl))?'selected':''}>${k}</option>`).join('');
+  const ex = (STATE.studentExtras && STATE.studentExtras[s.uid]) || {};
+  const nid = s.uid && s.uid.startsWith('C-') ? s.uid.slice(2) : '';
   return `<tr data-uid="${s.uid}">
+    <td style="font-size:10px;color:var(--ink-soft);letter-spacing:.3px;" title="رقم التعريف الوطني">${esc(nid||'—')}</td>
+    <td style="font-size:10.5px;color:var(--ink-soft);" title="رقم التسجيل">${esc(ex.matricule||'—')}</td>
     <td>${esc(s.name)} ${s.b10?'<span title="مولود 2010 - له حق الإعادة" style="color:var(--gold);">★</span>':''}</td>
     <td><button class="g-toggle" data-uid="${s.uid}" data-lvl="${lvl}" title="اضغط لتغيير الجنس">${s.g==='M'?'ذكر':'أنثى'}</button></td>
     <td>${esc(s.dob)}</td><td>${decisionBadge(s)}</td>
     <td style="font-size:10.5px; color:var(--ink-soft);">${esc(origin)}</td>
     <td>${s.avg!=null? s.avg.toFixed(2):''}</td>
+    <td style="font-size:10.5px;color:var(--ink-soft);">${esc(ex.status||'—')}</td>
     <td><select class="move-sel" data-uid="${s.uid}" data-lvl="${lvl}">${opts}</select></td>
     <td><button class="del-btn" data-uid="${s.uid}" data-lvl="${lvl}" title="حذف من القائمة">✕</button></td>
   </tr>`;
@@ -2023,8 +2045,8 @@ function renderLevelPanel(lvl){
     return `<div class="section-card${isSingleView?' full':''}">
       <div class="sc-head"><span class="name">فوج ${esc(k)}</span><span class="meta">${(secObj[k]||[]).length} تلميذ · ${male} ذ / ${female} إ ${repCount? ' · '+repCount+' معيد':''}</span></div>
       <div class="sc-body"><table class="roster">
-        <thead><tr><th>الاسم</th><th>الجنس</th><th>الميلاد</th><th>الحالة</th><th>الأصل</th><th>المعدل</th><th>نقل إلى</th><th></th></tr></thead>
-        <tbody>${students.map(s=>studentRowHtml(s, lvl, keys)).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:16px;">لا يوجد تلاميذ مطابقون</td></tr>'}</tbody>
+        <thead><tr><th title="رقم التعريف الوطني">ر.التعريف</th><th>ر.التسجيل</th><th>الاسم</th><th>الجنس</th><th>الميلاد</th><th>الحالة</th><th>الأصل</th><th>المعدل</th><th>الصفة</th><th>نقل إلى</th><th></th></tr></thead>
+        <tbody>${students.map(s=>studentRowHtml(s, lvl, keys)).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--ink-soft);padding:16px;">لا يوجد تلاميذ مطابقون</td></tr>'}</tbody>
       </table></div></div>`;
   }).join('');
 
@@ -2159,7 +2181,11 @@ function compareTwoLists(){
         <td style="font-size:10.5px">${esc(s.id||'—')}</td><td>${esc(s.where||'')}</td></tr>`).join('')}
       </tbody></table></div>`;
 
-  let html = `<div class="cmp-grid">
+  let html = `<div class="alert info" style="margin-bottom:10px;font-size:12px;">
+      📌 <b>المرجع المعتمد:</b> ملف «قوائم قبل التفويج» (بيانات الرقمنة) —
+      أي تلميذ فيه وغائب عن الملف الآخر يُعدّ <b>ناقصًا يجب إدراجه</b>.
+    </div>
+    <div class="cmp-grid">
     ${box('info', _cmpA.length, 'في الملف الأول')}
     ${box('info', _cmpB.length, 'في الملف الثاني')}
     ${box(onlyA.length?'bad':'ok', onlyA.length, 'في الأول فقط')}
@@ -4781,6 +4807,26 @@ function toggleBrand(hide){
 }
 
 
+
+/* ── إعادة توزيع قسرية: تُلغي التعديلات اليدوية وتبني من جديد ── */
+function forceRedistribute(){
+  const n = Object.keys(STATE.overrides||{}).length;
+  const msg = n ? `سيُعاد بناء كل الأفواج من جديد، وسيُلغى ${n} نقل يدوي سابق.\n\nهل تتابع؟`
+                : 'سيُعاد بناء كل الأفواج من جديد حسب الإعدادات الحالية.\n\nهل تتابع؟';
+  if (!confirm(msg)) return;
+  STATE.overrides = {};
+  STATE._extraSections = {1:[],2:[],3:[],4:[]};
+  STATE.activeSubTab = {1:null,2:null,3:null,4:null};
+  persist(); rerun();
+  const el = document.getElementById('distPreview');
+  if (el){
+    const prev = el.innerHTML;
+    el.style.display='block';
+    el.innerHTML = '<b>✓ أُعيد التوزيع بنجاح حسب الإعدادات الحالية.</b>';
+    setTimeout(()=>{ updateDistPreview(); }, 2600);
+  }
+}
+
 function renderSchoolSections(){
   const box = document.getElementById('schoolSecList');
   if (!box) return;
@@ -4963,6 +5009,7 @@ document.getElementById('fileRoster').addEventListener('change', e=>{ if (e.targ
 document.getElementById('cmpFileA').addEventListener('change', e=>{ if(e.target.files.length) loadCmp('A', e.target.files[0]); });
 document.getElementById('cmpFileB').addEventListener('change', e=>{ if(e.target.files.length) loadCmp('B', e.target.files[0]); });
 document.getElementById('cmpTwoBtn').addEventListener('click', compareTwoLists);
+document.getElementById('forceRedistBtn').addEventListener('click', forceRedistribute);
 document.getElementById('downloadTemplate4').addEventListener('click', downloadLvl4Template);
 document.getElementById('applyImport').addEventListener('click', applyImportedData);
 document.getElementById('resetToDemo').addEventListener('click', ()=>{ if (confirm('سيتم استبدال البيانات الحالية ببيانات العرض التجريبي. متابعة؟')) resetToDemo(); });
